@@ -5,13 +5,16 @@ main.py — Bootblack 全流程入口
 测试模式：  python src/main.py --test   （用假数据，跳过真实 API 调用）
 """
 
+import subprocess
 import sys
 import time
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+
+import yaml
 
 import exporter
 import fetcher
@@ -19,13 +22,47 @@ import renderer
 import writer
 
 
+CONFIG_PATH = ROOT / "config.yaml"
+
+
 def _step(n: int, total: int, label: str) -> None:
     print(f"[Bootblack] {n:02d}/{total:02d} {label}...")
 
 
+def _git_push() -> None:
+    """git add → commit → push；nothing-to-commit 时静默跳过。"""
+    msg = f"update: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    try:
+        subprocess.run(
+            ["git", "add", "output/bootblack.html"],
+            cwd=ROOT, check=True, capture_output=True,
+        )
+        result = subprocess.run(
+            ["git", "commit", "-m", msg],
+            cwd=ROOT, capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            if "nothing to commit" in result.stdout or "nothing to commit" in result.stderr:
+                print("[Bootblack] 无变更，跳过推送")
+                return
+            print(f"[ERROR] git commit 失败：{result.stderr.strip()}")
+            return
+        subprocess.run(
+            ["git", "push"],
+            cwd=ROOT, check=True, capture_output=True,
+        )
+        print(f"[OK] 已推送到 GitHub（{msg}）")
+    except subprocess.CalledProcessError as e:
+        print(f"[ERROR] git 操作失败：{e.stderr.decode(errors='replace').strip() if e.stderr else e}")
+
+
 def run() -> None:
-    """完整流程：抓取 → 渲染 → 注入 → 导出。"""
-    total = 4
+    """完整流程：抓取 → 渲染 → 注入 → 导出 → 推送。"""
+    with open(CONFIG_PATH, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
+    auto_push = cfg.get("git", {}).get("auto_push", False)
+
+    total = 5 if auto_push else 4
     t0 = time.perf_counter()
 
     _step(1, total, "抓取股价数据")
@@ -39,6 +76,10 @@ def run() -> None:
 
     _step(4, total, "导出股票清单")
     exporter.export()
+
+    if auto_push:
+        _step(5, total, "推送到 GitHub")
+        _git_push()
 
     elapsed = time.perf_counter() - t0
     print(f"[Bootblack] 完成  耗时 {elapsed:.1f}s")

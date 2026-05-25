@@ -8,8 +8,12 @@ data:
   cache_dir: "output/"               # 本地缓存目录
 
 schedule:
-  run_time: "09:00"                  # 每日运行时间（本地时间，HH:MM）
+  a_shares: "15:35"                  # A股任务触发时间（工作日，本地时间）
+  us_stocks: "05:05"                 # 美股任务触发时间（工作日，本地时间）
   timezone: "Asia/Shanghai"
+
+git:
+  auto_push: true                    # false 时跳过第五步 git push，方便本地调试
 
 ranking_limit: 10                    # 排行榜每侧最多显示的股票数
 charts_per_row: 1                    # 每行显示的图表数量
