@@ -102,7 +102,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 <div id="header">
   <h1>BOOTBLACK</h1>
   <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px;">
-    <span class="ts">2026-05-25 19:17</span>
+    <span class="ts">2026-05-25 19:52</span>
     <button class="tbtn" onclick="buildCharts();buildRanking()">刷新</button>
   </div>
 </div>
@@ -352,19 +352,37 @@ function placeLabels(state) {
   });
 
   positions.sort((a, b) => a.y - b.y);
-  const GAP = 16;
+
+  // Push down to avoid overlap
+  const GAP = 20;
   for (let i = 1; i < positions.length; i++) {
     if (positions[i].y - positions[i - 1].y < GAP) {
       positions[i].y = positions[i - 1].y + GAP;
     }
   }
-
-  // SVG overlay for guide lines (stays behind the label divs)
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;';
-  labelLayer.appendChild(svg);
+  // If last label overflowed bottom, shift everything back up
+  if (positions.length > 0) {
+    const overflow = positions[positions.length - 1].y - (H - 8);
+    if (overflow > 0) positions.forEach(p => p.y -= overflow);
+  }
 
   positions.forEach(p => {
+    // Guide line: thin vertical div at right edge, spans actualY → adjusted y
+    if (Math.abs(p.y - p.actualY) > 8) {
+      const guide = document.createElement('div');
+      const top = Math.min(p.actualY, p.y);
+      const height = Math.abs(p.y - p.actualY);
+      guide.style.cssText = `position:absolute;right:69px;top:${top}px;width:1px;height:${height}px;` +
+        `background:${p.color};opacity:0.35;pointer-events:none;`;
+      labelLayer.appendChild(guide);
+
+      // Small horizontal tick at actual series y
+      const tick = document.createElement('div');
+      tick.style.cssText = `position:absolute;right:64px;top:${p.actualY}px;width:6px;height:1px;` +
+        `background:${p.color};opacity:0.6;transform:translateY(-50%);pointer-events:none;`;
+      labelLayer.appendChild(tick);
+    }
+
     const el = document.createElement('div');
     el.className = 'slabel';
     el.textContent = p.name;
@@ -374,18 +392,6 @@ function placeLabels(state) {
     el.addEventListener('mousemove', e => movePopup(e));
     el.addEventListener('mouseleave', hidePopup);
     labelLayer.appendChild(el);
-
-    // Guide line when label was pushed more than 8px from actual series y
-    if (Math.abs(p.y - p.actualY) > 8) {
-      const x = labelLayer.clientWidth - 70;
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', x); line.setAttribute('y1', p.actualY);
-      line.setAttribute('x2', x); line.setAttribute('y2', p.y);
-      line.setAttribute('stroke', p.color);
-      line.setAttribute('stroke-width', '0.5');
-      line.setAttribute('opacity', '0.4');
-      svg.appendChild(line);
-    }
   });
 }
 
