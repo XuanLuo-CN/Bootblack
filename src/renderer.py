@@ -170,7 +170,7 @@ _TEMPLATE = r"""<!DOCTYPE html>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
+body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; transition: none; }
 
 #header { padding: 22px 32px 16px; border-bottom: 1px solid #2c2c2a; display: flex; align-items: baseline; gap: 18px; }
 #header h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.16em; color: #e0e0e0; }
@@ -254,6 +254,13 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 </style>
 </head>
 <body>
+<script>
+  if (window.self !== window.top) {
+    document.body.style.background = 'transparent';
+  } else {
+    document.body.style.background = '#27282e';
+  }
+</script>
 
 <div id="header">
   <h1>BOOTBLACK</h1>
