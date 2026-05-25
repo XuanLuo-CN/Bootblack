@@ -102,7 +102,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 <div id="header">
   <h1>BOOTBLACK</h1>
   <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px;">
-    <span class="ts">2026-05-25 19:52</span>
+    <span class="ts">2026-05-25 19:55</span>
     <button class="tbtn" onclick="buildCharts();buildRanking()">刷新</button>
   </div>
 </div>
@@ -174,7 +174,7 @@ function refreshChartData(state) {
   state.chart.timeScale().fitContent();
   setTimeout(() => {
     state.chart.timeScale().fitContent();
-    placeLabels(state);
+    requestAnimationFrame(() => placeLabels(state));
   }, 150);
 }
 
@@ -285,6 +285,8 @@ function buildCharts() {
           chart.timeScale().setVisibleLogicalRange({ from: clampedFrom, to: clampedTo });
         });
       }
+      clearTimeout(state._labelTimer);
+      state._labelTimer = setTimeout(() => requestAnimationFrame(() => placeLabels(state)), 60);
     });
 
     chart.subscribeCrosshairMove(param => {
@@ -372,14 +374,14 @@ function placeLabels(state) {
       const guide = document.createElement('div');
       const top = Math.min(p.actualY, p.y);
       const height = Math.abs(p.y - p.actualY);
-      guide.style.cssText = `position:absolute;right:69px;top:${top}px;width:1px;height:${height}px;` +
-        `background:${p.color};opacity:0.35;pointer-events:none;`;
+      guide.style.cssText = `position:absolute;right:70px;top:${top}px;width:2px;height:${height}px;` +
+        `background:${p.color};opacity:0.55;pointer-events:none;`;
       labelLayer.appendChild(guide);
 
       // Small horizontal tick at actual series y
       const tick = document.createElement('div');
-      tick.style.cssText = `position:absolute;right:64px;top:${p.actualY}px;width:6px;height:1px;` +
-        `background:${p.color};opacity:0.6;transform:translateY(-50%);pointer-events:none;`;
+      tick.style.cssText = `position:absolute;right:65px;top:${p.actualY}px;width:8px;height:2px;` +
+        `background:${p.color};opacity:0.7;transform:translateY(-50%);pointer-events:none;`;
       labelLayer.appendChild(tick);
     }
 
