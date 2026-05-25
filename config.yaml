@@ -1,0 +1,16 @@
+# Bootblack 配置文件
+obsidian:
+  vault_path: "PLACEHOLDER"          # Obsidian vault 根目录，例如 C:/Users/you/Obsidian/MyVault
+  output_folder: "Stock Reports"     # vault 内的输出子目录
+  md_path: "D:/Download/Documents/Obsidian Vault/Xuan Luo.md" 
+
+data:
+  cache_dir: "output/"               # 本地缓存目录
+
+schedule:
+  run_time: "09:00"                  # 每日运行时间（本地时间，HH:MM）
+  timezone: "Asia/Shanghai"
+
+ranking_limit: 10                    # 排行榜每侧最多显示的股票数
+charts_per_row: 1                    # 每行显示的图表数量
+group_max_stocks: 8                  # 每个图表最多显示的股票数，超出自动拆分子组

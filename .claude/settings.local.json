@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(python --version 2>&1)",
+      "PowerShell(pip --version 2>&1)",
+      "PowerShell(powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\" 2>&1)",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Xuan Luo\\\\.local\\\\bin;$env:PATH\"; Set-Location \"d:\\\\Git\\\\Bootblack\"; uv venv .venv 2>&1)",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Xuan Luo\\\\.local\\\\bin;$env:PATH\"; Set-Location \"d:\\\\Git\\\\Bootblack\"; uv pip install -r requirements.txt 2>&1)",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Xuan Luo\\\\.local\\\\bin;$env:PATH\"; Set-Location \"d:\\\\Git\\\\Bootblack\"; uv pip install python-docx 2>&1 | Select-String -NotMatch \"^warning\")",
+      "PowerShell(Copy-Item \"D:\\\\OneDrive\\\\实习\\\\个股调研报告\\\\生物医药\\\\实习总结.docx\" \"$env:TEMP\\\\summary_bb.docx\" -Force; \"copied\")",
+      "PowerShell(Start-Process \"d:\\\\Git\\\\Bootblack\\\\output\\\\bootblack.html\")",
+      "Bash(start \"\" \"d:\\\\Git\\\\Bootblack\\\\output\\\\bootblack.html\")",
+      "Bash(python src/main.py)"
+    ]
+  }
+}

@@ -1,0 +1,61 @@
+---
+obsidianUIMode: preview
+---
+
+```contributionGraph
+title: ""
+graphType: calendar
+dateRangeValue: 180
+dateRangeType: FIXED_DATE_RANGE
+startOfWeek: 0
+showCellRuleIndicators: true
+titleStyle:
+  textAlign: center
+  fontSize: 15px
+  fontWeight: normal
+dataSource:
+  type: PAGE
+  value: '"Daily Log"'
+  dateField:
+    file.day:
+    type: FILE_NAME
+  countField:
+    type: PAGE_PROPERTY
+    value: Hours
+fillTheScreen: true
+enableMainContainerShadow: true
+fromDate: 2026-04-02
+toDate: 2026-12-01
+cellStyle: {}
+cellStyleRules:
+  - id: Wine_a
+    color: "#d8b0b3"
+    min: "1"
+    max: "4"
+  - id: Wine_b
+    color: "#c78089"
+    min: "4"
+    max: "8"
+  - id: Wine_c
+    color: "#ac4c61"
+    min: "8"
+    max: "10"
+  - id: 1777079702867
+    min: "10"
+    max: "12"
+    color: "#9f2349ff"
+    text: ""
+  - id: Wine_d
+    color: "#830738"
+    min: "12"
+    max: "24"
+  - id: 1777082009162
+    min: "0"
+    max: "1"
+    color: "#808080ff"
+    text: ""
+mainContainerStyle: {}
+
+```
+
+<iframe data-id="bootblack" src="file:///D:/Git/Bootblack/output/bootblack.html?t=1779748061" width="100%" height="2420" frameborder="0" style="display:block"></iframe>
