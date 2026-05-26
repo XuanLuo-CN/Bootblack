@@ -30,7 +30,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 }
 .chart-el { width: calc(100% - 90px); height: 100%; }
 
-.label-layer { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.label-layer { position: absolute; inset: 0; pointer-events: none; overflow: visible; z-index: 6; }
 .slabel {
   position: absolute;
   font-size: 11px;
@@ -96,7 +96,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 <div id="header">
   <h1>BOOTBLACK</h1>
   <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px;">
-    <span class="ts">2026-05-25 20:16</span>
+    <span class="ts">2026-05-25 21:58</span>
     <button class="tbtn" onclick="buildCharts();buildRanking()">刷新</button>
   </div>
 </div>
@@ -205,7 +205,7 @@ function buildCharts() {
     wrap.appendChild(labelLayer);
 
     const overlayCanvas = document.createElement('canvas');
-    overlayCanvas.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
+    overlayCanvas.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:5;';
     wrap.appendChild(overlayCanvas);
 
     const cTooltip = document.createElement('div');
@@ -340,18 +340,21 @@ function buildCharts() {
 // ── End-of-series labels ────────────────────────────────────────────────────
 
 function placeLabels(state) {
-  const { chart, seriesArr, labelLayer, overlayCanvas, chartEl } = state;
+  const { seriesArr, labelLayer, overlayCanvas, chartEl } = state;
 
-  // Canvas covers the full chart-wrap (chart area + right label zone)
   labelLayer.innerHTML = '';
-  const OW = overlayCanvas.offsetWidth;
-  const OH = overlayCanvas.offsetHeight;
+
+  // Size canvas from the wrapping container (chart-el + 90px label zone)
+  const wrap = overlayCanvas.parentElement;
+  const OW = wrap ? wrap.clientWidth : 0;
+  const OH = wrap ? wrap.clientHeight : 0;
+  if (!OW || !OH) return;
   overlayCanvas.width = OW;
   overlayCanvas.height = OH;
   const ctx = overlayCanvas.getContext('2d');
   ctx.clearRect(0, 0, OW, OH);
 
-  const chartW = chartEl.clientWidth;   // right edge of TradingView chart
+  const chartW = chartEl.clientWidth;   // right boundary of TradingView canvas
   const H = chartEl.clientHeight;
   if (!chartW || !H) return;
 
@@ -362,9 +365,8 @@ function placeLabels(state) {
     if (!data || !data.length) return;
     const lastPt = data[data.length - 1];
     const y = ser.priceToCoordinate(lastPt.value);
-    const x = chart.timeScale().timeToCoordinate(lastPt.time);
-    if (y === null || x === null) return;
-    positions.push({ actualY: y, y, x, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market });
+    if (y === null) return;
+    positions.push({ actualY: y, y, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market });
   });
 
   positions.sort((a, b) => a.y - b.y);
@@ -382,14 +384,14 @@ function placeLabels(state) {
   }
 
   positions.forEach(p => {
-    // Always draw a connector from curve endpoint to the label in the right zone
+    // Connector in the label zone: from chart right edge at actual price Y → label Y
     ctx.save();
     ctx.globalAlpha = 0.5;
     ctx.strokeStyle = p.color;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(p.x, p.actualY);
-    ctx.lineTo(chartW + 4, p.y);
+    ctx.moveTo(chartW, p.actualY);
+    ctx.lineTo(chartW + 6, p.y);
     ctx.stroke();
     ctx.restore();
 
