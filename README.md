@@ -1,7 +1,7 @@
 <table border="0" cellpadding="0" cellspacing="0" style="border:none;border-collapse:collapse;">
   <tr>
     <td width="200" valign="middle" style="border:none;">
-      <img src="pics/Bootblack_logo_v0.png" alt="Bootblack Logo" width="150"/>
+      <img src="pics/Bootblack_logo_v0.png" alt="Bootblack Logo" width="200"/>
     </td>
     <td valign="middle" style="padding-left: 24px;border:none;">
       <h1>Bootblack</h1>
