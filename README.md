@@ -1,6 +1,6 @@
-<img src="pics/Bootblack_logo_v0.png" alt="Bootblack Logo" width="160" align="left"/>
+<img src="pics/Bootblack_logo_v0.png" alt="Bootblack Logo" width="200" align="left"/>
 
-# Bootblack 🥾
+# Bootblack
 
 Bootblack knows the market before you do. A daily script that scrapes stock prices, renders interactive charts, and slips them into your Obsidian vault — quiet, punctual, and always on the corner.
 
