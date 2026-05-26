@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bb-height="2840">
+<html lang="en" data-bb-height="3000">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -89,6 +89,11 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 .rg-pct { flex-shrink: 0; width: 46px; font-size: 10.5px; color: #5BAD7F; text-align: left; padding-left: 5px; }
 .rank-row-gain .rg-bar-area { flex: 1; position: relative; height: 14px; overflow: hidden; min-width: 0; }
 .rg-bar { position: absolute; left: 0; top: 0; height: 100%; background: #5BAD7F; border-radius: 0 3px 3px 0; }
+
+/* ── Daily briefing ── */
+#briefing { padding: 24px 32px 48px; border-top: 1px solid #1e1e1c; }
+#briefing-text { font-size: 12px; color: #b0b0b0; line-height: 1.8; white-space: pre-wrap; transition: opacity 0.15s; }
+.bl-btn { background: none; border: none; font-size: 11px; cursor: pointer; padding: 0; transition: color 0.15s; }
 </style>
 </head>
 <body>
@@ -103,7 +108,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 <div id="header">
   <h1>BOOTBLACK</h1>
   <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px;">
-    <span class="ts">2026-05-26 13:57</span>
+    <span class="ts">2026-05-26 14:52</span>
     <button class="tbtn" onclick="buildCharts();buildRanking()">Refresh</button>
   </div>
 </div>
@@ -127,6 +132,18 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
     </div>
   </div>
   <div id="rbars"></div>
+</div>
+
+<div id="briefing">
+  <div style="display:flex;align-items:center;margin-bottom:6px;">
+    <span style="font-size:10px;font-weight:600;color:#444;letter-spacing:0.12em;text-transform:uppercase;">Daily Briefing</span>
+    <div style="margin-left:auto;display:flex;gap:12px;">
+      <button class="bl-btn" id="bl-cn" onclick="setBriefingLang('cn')">中文</button>
+      <button class="bl-btn" id="bl-en" onclick="setBriefingLang('en')">EN</button>
+    </div>
+  </div>
+  <div style="font-size:10px;color:#3a3a38;letter-spacing:0.05em;margin-bottom:14px;">Generated 2026-05-26 · last call $0.0025 · total $0.0025 · ~1992 days left</div>
+  <div id="briefing-text"></div>
 </div>
 
 <div id="spopup">
@@ -157,6 +174,8 @@ const RANKINGS_TODAY = [{"name": "北海康成", "code": "01228", "market": "hk"
 const RANKING_LIMIT = 10;
 const STOCK_META = {"TSLA": {"name": "特斯拉", "code": "TSLA", "market": "us", "desc": "", "last_price": 431.09, "change_today": 0.25, "change_7d": -2.75}, "PDD": {"name": "拼多多", "code": "PDD", "market": "us", "desc": "", "last_price": 97.37, "change_today": 2.49, "change_7d": 1.87}, "GOOGL": {"name": "谷歌", "code": "GOOGL", "market": "us", "desc": "", "last_price": 386.26, "change_today": 0.46, "change_7d": -3.69}, "BRK-B": {"name": "伯克希尔", "code": "BRK-B", "market": "us", "desc": "", "last_price": 483.64, "change_today": -0.38, "change_7d": -0.09}, "NVDA": {"name": "英伟达", "code": "NVDA", "market": "us", "desc": "", "last_price": 215.33, "change_today": -2.52, "change_7d": -4.65}, "000858": {"name": "五粮液", "code": "000858", "market": "a", "desc": "强周期性行业，目前存在低估值的可能。2025年4月披露增持公告，金额介于5亿至10亿元，且不设定价格区间。", "last_price": 83.36, "change_today": -0.45, "change_7d": -4.04}, "000404": {"name": "长虹华意", "code": "000404", "market": "a", "desc": "连续八年的国际压缩机龙头，但行业产能过剩严重。目前市值非常低，但营收依然非常可观，可能是一只\"烟蒂\"。", "last_price": 9.14, "change_today": 0.22, "change_7d": 7.28}, "300677": {"name": "英科医疗", "code": "300677", "market": "a", "desc": "从疫情中期开始，手套行业开始严重产能过剩，公司毛利大幅下降。但25年初公司透露目前产能利用率100%。股价近一个月涨超50%。", "last_price": 45.72, "change_today": -2.1, "change_7d": -9.21}, "300502": {"name": "新易盛", "code": "300502", "market": "a", "desc": "多年布局光模块，早期大笔投入研发和收购生产线，成为AI行情中光模块板块的大赢家。过去几年由于不分红，多数早期股东套现离场。", "last_price": 700.0, "change_today": 6.71, "change_7d": 14.74}, "001270": {"name": "铖昌科技", "code": "001270", "market": "a", "desc": "高毛利但负盈利，军工订单\"脉冲式\"波动，90%以上营收来自军工大客户，账期长达400天+。2025年5月实控人披露减持计划，累计套现超3.87亿元。", "last_price": 143.55, "change_today": 2.38, "change_7d": -2.89}, "01890": {"name": "中国科培", "code": "01890", "market": "hk", "desc": "老牌的教育股，现金奶牛，具有很强的浮存金优势。", "last_price": 0.97, "change_today": 4.3, "change_7d": -4.9}, "688176": {"name": "亚虹医药", "code": "688176", "market": "a", "desc": "2024年初，APL-1202与化疗灌注联合使用的研究方向宣告失败。管线原本预计于2023年获批上市，有望成为国内首个NMIBC口服治疗药物。", "last_price": 11.92, "change_today": -2.05, "change_7d": -4.72}, "688443": {"name": "智翔金泰", "code": "688443", "market": "a", "desc": "2025年6月，与Cullinan Therapeutics就GR1803达成海外独家授权合作，包括2000万美元首付款和最高7亿美元的里程碑付款。", "last_price": 30.39, "change_today": 2.67, "change_7d": 1.13}, "688382": {"name": "益方生物", "code": "688382", "market": "a", "desc": "2022年12月武田与Nimbus就TYK-2变构抑制剂达成60亿美元合作（首付款40亿美元）。益方生物D-2570优异的临床数据，非常有望出海并与跨国药企展开深度商业化合作。", "last_price": 19.4, "change_today": -0.51, "change_7d": -9.89}, "688373": {"name": "盟科药业", "code": "688373", "market": "a", "desc": "盟科药业1.59亿股限售股8月5日起解禁，占总股本24.32%。", "last_price": 4.81, "change_today": -2.04, "change_7d": -11.58}, "688202": {"name": "美迪西", "code": "688202", "market": "a", "desc": "2024年扭盈为亏，股价大跌。但在2025年7月开始跟随创新药行情大幅上涨，一个月翻倍。", "last_price": 61.71, "change_today": -0.06, "change_7d": -6.46}, "688488": {"name": "艾迪药业", "code": "688488", "market": "a", "desc": "科研能力有限，过去一直靠卖抗HIV仿制药生存。长效抗HIV管线仅在临床前阶段，在赛道上远远落后。", "last_price": 15.14, "change_today": -0.13, "change_7d": -7.12}, "688062": {"name": "迈威生物", "code": "688062", "market": "a", "desc": "董事长因涉嫌短线交易被立案。两项BD合作：与齐鲁制药合作（3.8亿元首付款+1.2亿元里程碑款）；与谷歌系Calico围绕IL-11单抗（2500万美元首付款+5.71亿美元里程碑款）。", "last_price": 32.12, "change_today": -0.28, "change_7d": -6.46}, "600557": {"name": "康缘药业", "code": "600557", "market": "a", "desc": "康缘过去是中药企业，近两年业绩出现下滑。2024年底以2.7亿元收购中新医药100%股权，布局神经系统及代谢疾病。", "last_price": 12.34, "change_today": 0.57, "change_7d": -6.09}, "600332": {"name": "白云山", "code": "600332", "market": "a", "desc": "目前的中药产品线看不到什么盼头。2025年7月披露称，将拿出15亿元组成基金，做生物医药板块的股权投资。", "last_price": 21.55, "change_today": 0.47, "change_7d": -3.41}, "02096": {"name": "先声药业", "code": "02096", "market": "hk", "desc": "2024年8月，两位执行董事大幅减持。2025年3月凭借小分子抗新冠药实现超80%涨幅，但疫情只能带来短期刺激，高管可能对公司长期情况没有足够信心。", "last_price": 10.27, "change_today": -1.44, "change_7d": -11.54}, "02696": {"name": "复宏汉霖", "code": "02696", "market": "hk", "desc": "2024年6月尝试私有化退市，遭遇私募股东狙击后失败，股价跌回原先水平。2025年1月母公司发布回购公告，拟回购3亿-6亿元A股股份及不超过5%H股股票。", "last_price": 68.5, "change_today": -3.52, "change_7d": 1.71}, "09966": {"name": "康宁杰瑞", "code": "09966", "market": "hk", "desc": "中国\"双抗元老\"，经历多次临床失败。2024年将JSKN003授权给石药集团（4亿元首付款，最高30.8亿元里程碑款）。2025年6月董事长减持套现约1.17亿港元。", "last_price": 9.85, "change_today": 5.35, "change_7d": 8.72}, "02162": {"name": "康诺亚", "code": "02162", "market": "hk", "desc": "管理层豪华，Changyu Wang领导了全球首款PD-1靶向药Opdivo研发。4笔NewCo出海融资，总交易额约达16.985亿美元。", "last_price": 60.5, "change_today": -1.87, "change_7d": -11.61}, "01477": {"name": "欧康维视", "code": "01477", "market": "hk", "desc": "2024年8月与Alcon达成战略合作，引进多款眼科药物并发行新股，Alcon持股16.71%，交易总市值约10.2亿港元。", "last_price": 6.06, "change_today": -3.04, "change_7d": -12.43}, "03692": {"name": "翰森制药", "code": "03692", "market": "hk", "desc": "董事长钟慧娟为孙飘扬妻子。核心产品阿美替尼面临艾力斯伏美替尼的冲击（2024年销售额35.05亿，涨幅超77%）。", "last_price": 34.0, "change_today": 1.01, "change_7d": -4.76}, "02126": {"name": "药明巨诺", "code": "02126", "market": "hk", "desc": "目前仅有核心管线JWCAR029进展前沿，其余所有管线均在I期以下。CAR-T CD19赛道十分拥挤，越来越多的企业在布局。", "last_price": 1.99, "change_today": -1.49, "change_7d": -15.68}, "02181": {"name": "迈博药业", "code": "02181", "market": "hk", "desc": "管线稀少且均是大热门靶点的单抗，未来竞争力堪忧。", "last_price": 0.43, "change_today": -4.49, "change_7d": -16.67}, "01228": {"name": "北海康成", "code": "01228", "market": "hk", "desc": "一家专注于罕见病的公司。", "last_price": 1.78, "change_today": -8.72, "change_7d": -18.72}, "02552": {"name": "华领医药", "code": "02552", "market": "hk", "desc": "华领医药就是为Dorzagliatin而生，2011年获罗氏授权开发该产品。2024年底公告将收回Dorzagliatin权益，股价一度跌超20%。", "last_price": 3.06, "change_today": 2.0, "change_7d": -11.56}, "02511": {"name": "君圣泰医药", "code": "02511", "market": "hk", "desc": "2025年7月7日完成新股配售（占原股本10%），所得款项用于HTD1801的临床开发及商业化。", "last_price": 3.48, "change_today": 1.46, "change_7d": -10.77}, "06998": {"name": "嘉和生物", "code": "06998", "market": "hk", "desc": "反向收购亿腾嘉和，以换股形式完成借壳上市，亿腾持股77.43%、嘉和股东持股22.57%。", "last_price": 2.03, "change_today": -3.79, "change_7d": -20.7}, "09939": {"name": "开拓药业", "code": "09939", "market": "hk", "desc": "董事长童友之2024/9/3至2025/7/24陆续增持，股份比例从10.35%增加到11.18%。2025/8/1公告将配售4.62%股份。", "last_price": 2.48, "change_today": -5.7, "change_7d": -10.14}, "06978": {"name": "永泰生物", "code": "06978", "market": "hk", "desc": "公司核心创始人王歈博士已提交辞呈，将辞去执行董事、首席执行官及首席科技官职务，辞职自2025年6月25日起生效。", "last_price": 0.8, "change_today": 0.0, "change_7d": -10.11}};
 const MKTLABEL = { a: 'A', hk: 'HK', us: 'US' };
+const BRIEFING_CN = "**投资组合日报 | 2026年5月26日**\n\n美股科技股普遍承压，英伟达跌2.5%，特斯拉、谷歌涨幅有限。拼多多逆势上扬2.5%，显示相对韧性。A股主力股表现分化，新易盛劲升6.7%（7日涨14.7%），但医药板块集体疲软。港股生物医药持续下行，北海康成暴跌8.7%，开拓药业跌5.7%，嘉和生物累跌超20%。整体情绪偏弱，小盘生物医药风险加剧。";
+const BRIEFING_EN = "**Portfolio Brief | 26 May 2026**\n\nUS tech under pressure: Nvidia -2.5%, Tesla and Google flat. PDD outperforms +2.5%. Mainland China equities mixed—New Easun surges 6.7% (up 14.7% weekly), but biotech broadly wounded. Hong Kong biotech in freefall: Luokung Tech -8.7%, Luokung Pharma -5.7%, China Kanghui down over 20% weekly. Micro-cap pharma showing stress. Sentiment deteriorating across the board.";
 
 let mode = 'daily';
 let rangeFilter = null;   // null | '2w' | '2m'
@@ -196,9 +215,32 @@ function refreshChartData(state) {
   }, 150);
 }
 
+function initBriefing() {
+  const el = document.getElementById('briefing-text');
+  if (!el || !BRIEFING_CN) return;
+  el.textContent = BRIEFING_CN;
+  document.getElementById('bl-cn').style.color = '#e0e0e0';
+  document.getElementById('bl-en').style.color = '#555';
+}
+
+let _briefingLang = 'cn';
+function setBriefingLang(lang) {
+  if (lang === _briefingLang) return;
+  _briefingLang = lang;
+  const el = document.getElementById('briefing-text');
+  el.style.opacity = '0';
+  setTimeout(function() {
+    el.textContent = lang === 'cn' ? BRIEFING_CN : BRIEFING_EN;
+    el.style.opacity = '1';
+  }, 150);
+  document.getElementById('bl-cn').style.color = lang === 'cn' ? '#e0e0e0' : '#555';
+  document.getElementById('bl-en').style.color = lang === 'en' ? '#e0e0e0' : '#555';
+}
+
 function init() {
   buildCharts();
   buildRanking();
+  initBriefing();
 }
 
 // ── Chart building ──────────────────────────────────────────────────────────
@@ -621,7 +663,7 @@ init();
 function fitFrame() {
   try {
     if (!window.frameElement) return;
-    const ids = ['header', 'toggle-bar', 'charts', 'ranking'];
+    const ids = ['header', 'toggle-bar', 'charts', 'ranking', 'briefing'];
     const bottom = ids.reduce((max, id) => {
       const el = document.getElementById(id);
       return el ? Math.max(max, el.offsetTop + el.offsetHeight) : max;
