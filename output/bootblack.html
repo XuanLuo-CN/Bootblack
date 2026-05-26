@@ -96,7 +96,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 <div id="header">
   <h1>BOOTBLACK</h1>
   <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px;">
-    <span class="ts">2026-05-25 21:58</span>
+    <span class="ts">2026-05-25 22:03</span>
     <button class="tbtn" onclick="buildCharts();buildRanking()">刷新</button>
   </div>
 </div>
@@ -366,10 +366,11 @@ function placeLabels(state) {
     const lastPt = data[data.length - 1];
     const y = ser.priceToCoordinate(lastPt.value);
     if (y === null) return;
-    positions.push({ actualY: y, y, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market });
+    positions.push({ actualY: y, y, pct: lastPt.value, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market });
   });
 
-  positions.sort((a, b) => a.y - b.y);
+  // Sort by P&L descending: highest gainer at top (smallest y on screen)
+  positions.sort((a, b) => b.pct - a.pct);
 
   const GAP = 18;
   for (let i = 1; i < positions.length; i++) {
@@ -386,9 +387,8 @@ function placeLabels(state) {
   positions.forEach(p => {
     // Connector in the label zone: from chart right edge at actual price Y → label Y
     ctx.save();
-    ctx.globalAlpha = 0.5;
     ctx.strokeStyle = p.color;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(chartW, p.actualY);
     ctx.lineTo(chartW + 6, p.y);
