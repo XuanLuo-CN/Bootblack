@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-bb-height="1580">
+<html lang="zh-CN" data-bb-height="2420">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,7 +18,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 .tbtn.active { border-color: #4a4a48; color: #ccc; background: #262624; }
 .tbtn:hover:not(.active) { border-color: #3a3a38; color: #888; }
 
-#charts { display: grid; grid-template-columns: repeat(2, 1fr); }
+#charts { display: grid; grid-template-columns: repeat(1, 1fr); }
 .group-sec { padding: 20px 24px 8px; }
 .group-title { font-size: 10px; font-weight: 600; color: #444; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
 .chart-wrap { position: relative; height: 320px; overflow: visible; }
@@ -37,9 +37,11 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
   padding: 1px 5px;
   border-radius: 2px;
   white-space: nowrap;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
   background: rgba(20,20,18,0.82);
 }
+.slabel:hover { opacity: 0.8; }
 
 .c-tooltip {
   position: absolute; background: rgba(30,30,28,0.92); border: 1px solid #2e2e2c;
@@ -48,14 +50,19 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
   white-space: nowrap; line-height: 1.9;
 }
 
-#lpopup {
-  position: fixed; background: #252523; border: 1px solid #363634;
-  border-radius: 6px; padding: 11px 14px; font-size: 12px;
-  max-width: 320px; z-index: 999; display: none;
-  box-shadow: 0 8px 24px rgba(0,0,0,.55); pointer-events: none;
+#spopup {
+  position: fixed; background: #2a2a28; border: 1px solid #3a3a38;
+  border-radius: 8px; padding: 14px; min-width: 200px; max-width: 300px;
+  z-index: 9999; display: none; box-shadow: 0 8px 24px rgba(0,0,0,.6);
+  font-size: 12px; color: #e0e0e0;
 }
-#lpopup .lp-market { font-size: 10px; color: #555; margin-bottom: 6px; letter-spacing: 0.05em; }
-#lpopup .lp-desc { color: #b0b0b0; line-height: 1.6; font-size: 12px; }
+.sp-hr { border-top: 1px solid #3a3a38; margin: 10px 0; }
+.sp-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.sp-row span:first-child { color: #888; font-size: 11px; }
+.sp-row span:last-child { font-size: 11px; font-weight: 500; }
+.sp-name { font-weight: 600; font-size: 13px; }
+.sp-btn { background: #333331; border: 1px solid #3a3a38; color: #aaa; padding: 5px 0; border-radius: 3px; cursor: pointer; font-size: 11px; flex: 1; }
+.sp-btn:hover { background: #3a3a38; color: #ccc; }
 
 /* ── Ranking dual-column layout ── */
 #ranking { padding: 32px 32px 56px; }
@@ -96,7 +103,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 <div id="header">
   <h1>BOOTBLACK</h1>
   <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px;">
-    <span class="ts">2026-05-25 22:03</span>
+    <span class="ts">2026-05-25 22:15</span>
     <button class="tbtn" onclick="buildCharts();buildRanking()">刷新</button>
   </div>
 </div>
@@ -122,9 +129,25 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
   <div id="rbars"></div>
 </div>
 
-<div id="lpopup">
-  <div class="lp-market"></div>
-  <div class="lp-desc"></div>
+<div id="spopup">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <div><span class="sp-name"></span><span class="sp-code" style="color:#888;font-size:11px;margin-left:6px;"></span></div>
+    <span class="sp-market" style="font-size:10px;padding:2px 7px;border-radius:3px;color:#fff;font-weight:500;margin-left:8px;flex-shrink:0;"></span>
+  </div>
+  <div class="sp-hr"></div>
+  <div class="sp-row"><span>今日涨跌</span><span class="sp-today"></span></div>
+  <div class="sp-row"><span>当前价格</span><span class="sp-price" style="color:#ccc;"></span></div>
+  <div class="sp-row" style="margin-bottom:0;"><span>7日涨跌</span><span class="sp-7d"></span></div>
+  <div class="sp-desc-block">
+    <div class="sp-hr"></div>
+    <div style="font-size:10px;color:#555;letter-spacing:0.08em;margin-bottom:5px;">概述</div>
+    <div class="sp-desc" style="font-size:11px;color:#b0b0b0;line-height:1.6;"></div>
+  </div>
+  <div class="sp-hr"></div>
+  <div style="display:flex;gap:6px;">
+    <button class="sp-btn sp-ths">同花顺</button>
+    <button class="sp-btn sp-xq">雪球</button>
+  </div>
 </div>
 
 <script>
@@ -132,6 +155,7 @@ const GROUPS = [{"name": "主力股", "series": [{"name": "英伟达", "code": "
 const RANKINGS = [{"name": "嘉和生物", "code": "06998", "market": "hk", "pct": -18.85}, {"name": "药明巨诺", "code": "02126", "market": "hk", "pct": -16.12}, {"name": "君圣泰医药", "code": "02511", "market": "hk", "pct": -12.31}, {"name": "永泰生物", "code": "06978", "market": "hk", "pct": -12.22}, {"name": "康诺亚", "code": "02162", "market": "hk", "pct": -11.24}, {"name": "益方生物", "code": "688382", "market": "a", "pct": -10.92}, {"name": "北海康成", "code": "01228", "market": "hk", "pct": -10.76}, {"name": "盟科药业", "code": "688373", "market": "a", "pct": -10.69}, {"name": "先声药业", "code": "02096", "market": "hk", "pct": -10.02}, {"name": "欧康维视", "code": "01477", "market": "hk", "pct": -9.7}, {"name": "中国科培", "code": "01890", "market": "hk", "pct": -8.65}, {"name": "艾迪药业", "code": "688488", "market": "a", "pct": -8.36}, {"name": "迈博药业", "code": "02181", "market": "hk", "pct": -8.33}, {"name": "华领医药", "code": "02552", "market": "hk", "pct": -7.91}, {"name": "铖昌科技", "code": "001270", "market": "a", "pct": -7.78}, {"name": "开拓药业", "code": "09939", "market": "hk", "pct": -7.39}, {"name": "英科医疗", "code": "300677", "market": "a", "pct": -6.85}, {"name": "迈威生物", "code": "688062", "market": "a", "pct": -6.84}, {"name": "翰森制药", "code": "03692", "market": "hk", "pct": -6.75}, {"name": "康缘药业", "code": "600557", "market": "a", "pct": -5.74}, {"name": "五粮液", "code": "000858", "market": "a", "pct": -5.45}, {"name": "美迪西", "code": "688202", "market": "a", "pct": -5.43}, {"name": "英伟达", "code": "NVDA", "market": "us", "pct": -4.65}, {"name": "白云山", "code": "600332", "market": "a", "pct": -4.36}, {"name": "亚虹医药", "code": "688176", "market": "a", "pct": -2.31}, {"name": "康宁杰瑞", "code": "09966", "market": "hk", "pct": -1.06}, {"name": "智翔金泰", "code": "688443", "market": "a", "pct": -0.83}, {"name": "复宏汉霖", "code": "02696", "market": "hk", "pct": 2.54}, {"name": "新易盛", "code": "300502", "market": "a", "pct": 6.65}, {"name": "长虹华意", "code": "000404", "market": "a", "pct": 9.27}];
 const RANKINGS_TODAY = [{"name": "长虹华意", "code": "000404", "market": "a", "pct": -5.26}, {"name": "益方生物", "code": "688382", "market": "a", "pct": -2.87}, {"name": "英伟达", "code": "NVDA", "market": "us", "pct": -2.52}, {"name": "美迪西", "code": "688202", "market": "a", "pct": -2.42}, {"name": "迈威生物", "code": "688062", "market": "a", "pct": -2.39}, {"name": "盟科药业", "code": "688373", "market": "a", "pct": -2.38}, {"name": "艾迪药业", "code": "688488", "market": "a", "pct": -2.37}, {"name": "嘉和生物", "code": "06998", "market": "hk", "pct": -2.31}, {"name": "先声药业", "code": "02096", "market": "hk", "pct": -2.25}, {"name": "亚虹医药", "code": "688176", "market": "a", "pct": -2.16}, {"name": "药明巨诺", "code": "02126", "market": "hk", "pct": -1.93}, {"name": "英科医疗", "code": "300677", "market": "a", "pct": -1.72}, {"name": "华领医药", "code": "02552", "market": "hk", "pct": -1.21}, {"name": "翰森制药", "code": "03692", "market": "hk", "pct": -1.11}, {"name": "铖昌科技", "code": "001270", "market": "a", "pct": -1.04}, {"name": "康诺亚", "code": "02162", "market": "hk", "pct": -0.87}, {"name": "开拓药业", "code": "09939", "market": "hk", "pct": -0.75}, {"name": "白云山", "code": "600332", "market": "a", "pct": -0.74}, {"name": "复宏汉霖", "code": "02696", "market": "hk", "pct": -0.35}, {"name": "君圣泰医药", "code": "02511", "market": "hk", "pct": -0.29}, {"name": "中国科培", "code": "01890", "market": "hk", "pct": 0.0}, {"name": "迈博药业", "code": "02181", "market": "hk", "pct": 0.0}, {"name": "北海康成", "code": "01228", "market": "hk", "pct": 0.0}, {"name": "智翔金泰", "code": "688443", "market": "a", "pct": 0.1}, {"name": "五粮液", "code": "000858", "market": "a", "pct": 0.61}, {"name": "欧康维视", "code": "01477", "market": "hk", "pct": 0.65}, {"name": "康缘药业", "code": "600557", "market": "a", "pct": 1.07}, {"name": "永泰生物", "code": "06978", "market": "hk", "pct": 1.28}, {"name": "康宁杰瑞", "code": "09966", "market": "hk", "pct": 3.77}, {"name": "新易盛", "code": "300502", "market": "a", "pct": 6.27}];
 const RANKING_LIMIT = 10;
+const STOCK_META = {"NVDA": {"name": "英伟达", "code": "NVDA", "market": "us", "desc": "", "last_price": 215.33, "change_today": -2.52, "change_7d": -4.65}, "000858": {"name": "五粮液", "code": "000858", "market": "a", "desc": "强周期性行业，目前存在低估值的可能。2025年4月披露增持公告，金额介于5亿至10亿元，且不设定价格区间。", "last_price": 84.14, "change_today": 0.61, "change_7d": -5.45}, "000404": {"name": "长虹华意", "code": "000404", "market": "a", "desc": "连续八年的国际压缩机龙头，但行业产能过剩严重。目前市值非常低，但营收依然非常可观，可能是一只\"烟蒂\"。", "last_price": 9.19, "change_today": -5.26, "change_7d": 9.27}, "300677": {"name": "英科医疗", "code": "300677", "market": "a", "desc": "从疫情中期开始，手套行业开始严重产能过剩，公司毛利大幅下降。但25年初公司透露目前产能利用率100%。股价近一个月涨超50%。", "last_price": 46.76, "change_today": -1.72, "change_7d": -6.85}, "300502": {"name": "新易盛", "code": "300502", "market": "a", "desc": "多年布局光模块，早期大笔投入研发和收购生产线，成为AI行情中光模块板块的大赢家。过去几年由于不分红，多数早期股东套现离场。", "last_price": 659.01, "change_today": 6.27, "change_7d": 6.65}, "001270": {"name": "铖昌科技", "code": "001270", "market": "a", "desc": "高毛利但负盈利，军工订单\"脉冲式\"波动，90%以上营收来自军工大客户，账期长达400天+。2025年5月实控人披露减持计划，累计套现超3.87亿元。", "last_price": 143.49, "change_today": -1.04, "change_7d": -7.78}, "01890": {"name": "中国科培", "code": "01890", "market": "hk", "desc": "老牌的教育股，现金奶牛，具有很强的浮存金优势。", "last_price": 0.95, "change_today": 0.0, "change_7d": -8.65}, "688176": {"name": "亚虹医药", "code": "688176", "market": "a", "desc": "2024年初，APL-1202与化疗灌注联合使用的研究方向宣告失败。管线原本预计于2023年获批上市，有望成为国内首个NMIBC口服治疗药物。", "last_price": 12.24, "change_today": -2.16, "change_7d": -2.31}, "688443": {"name": "智翔金泰", "code": "688443", "market": "a", "desc": "2025年6月，与Cullinan Therapeutics就GR1803达成海外独家授权合作，包括2000万美元首付款和最高7亿美元的里程碑付款。", "last_price": 29.83, "change_today": 0.1, "change_7d": -0.83}, "688382": {"name": "益方生物", "code": "688382", "market": "a", "desc": "2022年12月武田与Nimbus就TYK-2变构抑制剂达成60亿美元合作（首付款40亿美元）。益方生物D-2570优异的临床数据，非常有望出海并与跨国药企展开深度商业化合作。", "last_price": 19.65, "change_today": -2.87, "change_7d": -10.92}, "688373": {"name": "盟科药业", "code": "688373", "market": "a", "desc": "盟科药业1.59亿股限售股8月5日起解禁，占总股本24.32%。", "last_price": 4.93, "change_today": -2.38, "change_7d": -10.69}, "688202": {"name": "美迪西", "code": "688202", "market": "a", "desc": "2024年扭盈为亏，股价大跌。但在2025年7月开始跟随创新药行情大幅上涨，一个月翻倍。", "last_price": 62.37, "change_today": -2.42, "change_7d": -5.43}, "688488": {"name": "艾迪药业", "code": "688488", "market": "a", "desc": "科研能力有限，过去一直靠卖抗HIV仿制药生存。长效抗HIV管线仅在临床前阶段，在赛道上远远落后。", "last_price": 15.23, "change_today": -2.37, "change_7d": -8.36}, "688062": {"name": "迈威生物", "code": "688062", "market": "a", "desc": "董事长因涉嫌短线交易被立案。两项BD合作：与齐鲁制药合作（3.8亿元首付款+1.2亿元里程碑款）；与谷歌系Calico围绕IL-11单抗（2500万美元首付款+5.71亿美元里程碑款）。", "last_price": 32.28, "change_today": -2.39, "change_7d": -6.84}, "600557": {"name": "康缘药业", "code": "600557", "market": "a", "desc": "康缘过去是中药企业，近两年业绩出现下滑。2024年底以2.7亿元收购中新医药100%股权，布局神经系统及代谢疾病。", "last_price": 12.31, "change_today": 1.07, "change_7d": -5.74}, "600332": {"name": "白云山", "code": "600332", "market": "a", "desc": "目前的中药产品线看不到什么盼头。2025年7月披露称，将拿出15亿元组成基金，做生物医药板块的股权投资。", "last_price": 21.49, "change_today": -0.74, "change_7d": -4.36}, "02096": {"name": "先声药业", "code": "02096", "market": "hk", "desc": "2024年8月，两位执行董事大幅减持。2025年3月凭借小分子抗新冠药实现超80%涨幅，但疫情只能带来短期刺激，高管可能对公司长期情况没有足够信心。", "last_price": 10.42, "change_today": -2.25, "change_7d": -10.02}, "02696": {"name": "复宏汉霖", "code": "02696", "market": "hk", "desc": "2024年6月尝试私有化退市，遭遇私募股东狙击后失败，股价跌回原先水平。2025年1月母公司发布回购公告，拟回购3亿-6亿元A股股份及不超过5%H股股票。", "last_price": 70.75, "change_today": -0.35, "change_7d": 2.54}, "09966": {"name": "康宁杰瑞", "code": "09966", "market": "hk", "desc": "中国\"双抗元老\"，经历多次临床失败。2024年将JSKN003授权给石药集团（4亿元首付款，最高30.8亿元里程碑款）。2025年6月董事长减持套现约1.17亿港元。", "last_price": 9.35, "change_today": 3.77, "change_7d": -1.06}, "02162": {"name": "康诺亚", "code": "02162", "market": "hk", "desc": "管理层豪华，Changyu Wang领导了全球首款PD-1靶向药Opdivo研发。4笔NewCo出海融资，总交易额约达16.985亿美元。", "last_price": 62.8, "change_today": -0.87, "change_7d": -11.24}, "01477": {"name": "欧康维视", "code": "01477", "market": "hk", "desc": "2024年8月与Alcon达成战略合作，引进多款眼科药物并发行新股，Alcon持股16.71%，交易总市值约10.2亿港元。", "last_price": 6.24, "change_today": 0.65, "change_7d": -9.7}, "03692": {"name": "翰森制药", "code": "03692", "market": "hk", "desc": "董事长钟慧娟为孙飘扬妻子。核心产品阿美替尼面临艾力斯伏美替尼的冲击（2024年销售额35.05亿，涨幅超77%）。", "last_price": 33.72, "change_today": -1.11, "change_7d": -6.75}, "02126": {"name": "药明巨诺", "code": "02126", "market": "hk", "desc": "目前仅有核心管线JWCAR029进展前沿，其余所有管线均在I期以下。CAR-T CD19赛道十分拥挤，越来越多的企业在布局。", "last_price": 2.03, "change_today": -1.93, "change_7d": -16.12}, "02181": {"name": "迈博药业", "code": "02181", "market": "hk", "desc": "管线稀少且均是大热门靶点的单抗，未来竞争力堪忧。", "last_price": 0.44, "change_today": 0.0, "change_7d": -8.33}, "01228": {"name": "北海康成", "code": "01228", "market": "hk", "desc": "一家专注于罕见病的公司。", "last_price": 1.99, "change_today": 0.0, "change_7d": -10.76}, "02552": {"name": "华领医药", "code": "02552", "market": "hk", "desc": "华领医药就是为Dorzagliatin而生，2011年获罗氏授权开发该产品。2024年底公告将收回Dorzagliatin权益，股价一度跌超20%。", "last_price": 3.26, "change_today": -1.21, "change_7d": -7.91}, "02511": {"name": "君圣泰医药", "code": "02511", "market": "hk", "desc": "2025年7月7日完成新股配售（占原股本10%），所得款项用于HTD1801的临床开发及商业化。", "last_price": 3.42, "change_today": -0.29, "change_7d": -12.31}, "06998": {"name": "嘉和生物", "code": "06998", "market": "hk", "desc": "反向收购亿腾嘉和，以换股形式完成借壳上市，亿腾持股77.43%、嘉和股东持股22.57%。", "last_price": 2.11, "change_today": -2.31, "change_7d": -18.85}, "09939": {"name": "开拓药业", "code": "09939", "market": "hk", "desc": "董事长童友之2024/9/3至2025/7/24陆续增持，股份比例从10.35%增加到11.18%。2025/8/1公告将配售4.62%股份。", "last_price": 2.63, "change_today": -0.75, "change_7d": -7.39}, "06978": {"name": "永泰生物", "code": "06978", "market": "hk", "desc": "公司核心创始人王歈博士已提交辞呈，将辞去执行董事、首席执行官及首席科技官职务，辞职自2025年6月25日起生效。", "last_price": 0.79, "change_today": 1.28, "change_7d": -12.22}};
 const MKTLABEL = { a: 'A股', hk: '港股', us: '美股' };
 
 let mode = 'daily';
@@ -366,7 +390,7 @@ function placeLabels(state) {
     const lastPt = data[data.length - 1];
     const y = ser.priceToCoordinate(lastPt.value);
     if (y === null) return;
-    positions.push({ actualY: y, y, pct: lastPt.value, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market });
+    positions.push({ actualY: y, y, pct: lastPt.value, code: meta.code, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market });
   });
 
   // Sort by P&L descending: highest gainer at top (smallest y on screen)
@@ -401,27 +425,87 @@ function placeLabels(state) {
     el.style.left = (chartW + 8) + 'px';
     el.style.top = (p.y - 8) + 'px';
     el.style.color = p.color;
+    // Left-click: show detail popup
+    el.addEventListener('click', e => { e.stopPropagation(); showStockPopup(e, p.code); });
+    // Right-click or long-press: jump to THS directly
+    el.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      const m = STOCK_META[p.code];
+      if (m) window.open(ths_url(m.code, m.market), '_blank');
+    });
+    let _lpt = null;
+    el.addEventListener('touchstart', () => { _lpt = setTimeout(() => { const m = STOCK_META[p.code]; if (m) window.open(ths_url(m.code, m.market), '_blank'); }, 600); }, { passive: true });
+    el.addEventListener('touchend',  () => clearTimeout(_lpt), { passive: true });
+    el.addEventListener('touchmove', () => clearTimeout(_lpt), { passive: true });
     labelLayer.appendChild(el);
   });
 }
 
-// ── Label popup ─────────────────────────────────────────────────────────────
+// ── Stock detail popup ───────────────────────────────────────────────────────
 
-function showPopup(e, p) {
-  const pp = document.getElementById('lpopup');
-  pp.querySelector('.lp-market').textContent = MKTLABEL[p.market] || p.market;
-  pp.querySelector('.lp-desc').textContent = p.desc || '';
-  pp.querySelector('.lp-desc').style.display = p.desc ? '' : 'none';
-  pp.style.left = (e.clientX + 14) + 'px';
-  pp.style.top = (e.clientY - 10) + 'px';
+function ths_url(code, market) {
+  if (market === 'hk') return 'https://stockpage.10jqka.com.cn/HK/' + code + '/';
+  return 'https://stockpage.10jqka.com.cn/' + code + '/';
+}
+
+function xueqiu_url(code, market) {
+  if (market === 'us') return 'https://xueqiu.com/S/' + code;
+  if (market === 'hk') return 'https://xueqiu.com/S/HK' + code;
+  return 'https://xueqiu.com/S/' + (code.startsWith('6') ? 'SH' : 'SZ') + code;
+}
+
+function showStockPopup(e, code) {
+  const m = STOCK_META[code];
+  if (!m) return;
+  const pp = document.getElementById('spopup');
+
+  pp.querySelector('.sp-name').textContent = m.name;
+  pp.querySelector('.sp-code').textContent = m.code;
+
+  const badge = pp.querySelector('.sp-market');
+  badge.textContent = MKTLABEL[m.market] || m.market;
+  badge.style.background = { a: '#3D9162', hk: '#2E7DD1', us: '#8B7EC8' }[m.market] || '#555';
+
+  const todayEl = pp.querySelector('.sp-today');
+  todayEl.textContent = (m.change_today >= 0 ? '+' : '') + m.change_today.toFixed(2) + '%';
+  todayEl.style.color = m.change_today >= 0 ? '#5BAD7F' : '#D4667A';
+
+  pp.querySelector('.sp-price').textContent = m.last_price.toFixed(2);
+
+  const el7d = pp.querySelector('.sp-7d');
+  el7d.textContent = (m.change_7d >= 0 ? '+' : '') + m.change_7d.toFixed(2) + '%';
+  el7d.style.color = m.change_7d >= 0 ? '#5BAD7F' : '#D4667A';
+
+  const descBlock = pp.querySelector('.sp-desc-block');
+  if (m.desc) {
+    pp.querySelector('.sp-desc').textContent = m.desc;
+    descBlock.style.display = '';
+  } else {
+    descBlock.style.display = 'none';
+  }
+
+  pp.querySelector('.sp-ths').onclick = () => window.open(ths_url(m.code, m.market), '_blank');
+  pp.querySelector('.sp-xq').onclick  = () => window.open(xueqiu_url(m.code, m.market), '_blank');
+
+  // Measure then position
+  pp.style.visibility = 'hidden';
   pp.style.display = 'block';
+  const ppW = pp.offsetWidth, ppH = pp.offsetHeight;
+  const vpW = window.innerWidth, vpH = window.innerHeight;
+  const r = e.target.getBoundingClientRect();
+  let left = r.right + 8;
+  if (left + ppW > vpW - 8) left = r.left - ppW - 8;
+  let top = r.top - 20;
+  if (top + ppH > vpH - 8) top = vpH - ppH - 8;
+  pp.style.left = Math.max(4, left) + 'px';
+  pp.style.top  = Math.max(4, top)  + 'px';
+  pp.style.visibility = '';
 }
-function movePopup(e) {
-  const pp = document.getElementById('lpopup');
-  pp.style.left = (e.clientX + 14) + 'px';
-  pp.style.top = (e.clientY - 10) + 'px';
-}
-function hidePopup() { document.getElementById('lpopup').style.display = 'none'; }
+
+document.addEventListener('click', e => {
+  const pp = document.getElementById('spopup');
+  if (pp.style.display !== 'none' && !pp.contains(e.target)) pp.style.display = 'none';
+});
 
 // ── Toggle daily / weekly ───────────────────────────────────────────────────
 
