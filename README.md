@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="pics/Bootblack_logo.png" alt="Bootblack Logo" width="180"/>
+  <img src="pics/Bootblack_logo_v0.png" alt="Bootblack Logo" width="180"/>
 </p>
 
 # Bootblack 🥾
