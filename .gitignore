@@ -2,3 +2,5 @@
 __pycache__/
 *.pyc
 .secrets.yaml
+pics/*
+!pics/Bootblack_logo_v0.png
