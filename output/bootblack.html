@@ -28,7 +28,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
   transform: scale(0.55) !important;
   transform-origin: bottom right !important;
 }
-.chart-el { width: 100%; height: 100%; }
+.chart-el { width: calc(100% - 90px); height: 100%; }
 
 .label-layer { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
 .slabel {
@@ -96,7 +96,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 <div id="header">
   <h1>BOOTBLACK</h1>
   <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px;">
-    <span class="ts">2026-05-25 20:07</span>
+    <span class="ts">2026-05-25 20:16</span>
     <button class="tbtn" onclick="buildCharts();buildRanking()">刷新</button>
   </div>
 </div>
@@ -342,16 +342,18 @@ function buildCharts() {
 function placeLabels(state) {
   const { chart, seriesArr, labelLayer, overlayCanvas, chartEl } = state;
 
-  // Clear previous labels and canvas drawing
+  // Canvas covers the full chart-wrap (chart area + right label zone)
   labelLayer.innerHTML = '';
-  const W = chartEl.clientWidth;
-  const H = chartEl.clientHeight;
-  overlayCanvas.width = W;
-  overlayCanvas.height = H;
+  const OW = overlayCanvas.offsetWidth;
+  const OH = overlayCanvas.offsetHeight;
+  overlayCanvas.width = OW;
+  overlayCanvas.height = OH;
   const ctx = overlayCanvas.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
+  ctx.clearRect(0, 0, OW, OH);
 
-  if (!W || !H) return;
+  const chartW = chartEl.clientWidth;   // right edge of TradingView chart
+  const H = chartEl.clientHeight;
+  if (!chartW || !H) return;
 
   const positions = [];
 
@@ -380,23 +382,21 @@ function placeLabels(state) {
   }
 
   positions.forEach(p => {
-    // Draw guide line on overlay canvas when label is displaced
-    if (Math.abs(p.y - p.actualY) > 6) {
-      ctx.save();
-      ctx.globalAlpha = 0.55;
-      ctx.strokeStyle = p.color;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(p.x + 4, p.actualY);
-      ctx.lineTo(p.x + 6, p.y + 6);
-      ctx.stroke();
-      ctx.restore();
-    }
+    // Always draw a connector from curve endpoint to the label in the right zone
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.actualY);
+    ctx.lineTo(chartW + 4, p.y);
+    ctx.stroke();
+    ctx.restore();
 
     const el = document.createElement('div');
     el.className = 'slabel';
     el.textContent = p.name;
-    el.style.left = (p.x + 8) + 'px';
+    el.style.left = (chartW + 8) + 'px';
     el.style.top = (p.y - 8) + 'px';
     el.style.color = p.color;
     labelLayer.appendChild(el);
