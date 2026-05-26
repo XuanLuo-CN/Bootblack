@@ -14,12 +14,11 @@
 ---
 
 ## Features
-
-- **Interactive charts** — Normalised line charts (all from 0% baseline), switchable time ranges, and a 7-day ranking bar chart. Click any label to open a stock detail panel with one-click links to Tonghuashun and Xueqiu.
+- **Automated pipeline** — Fetches stock prices daily after each market close, runs return analysis and ranking, and publishes the result to GitHub Pages automatically
+- **Interactive dashboard** — Normalised line charts, switchable time ranges, and a 7-day ranking bar chart. Click any label to open a stock detail panel with one-click links to Tonghuashun and Xueqiu.
+- **Obsidian integration** — The generated HTML is injected into a `.md` file via `<iframe>` and rendered by Obsidian's Custom Frames plugin, enabling seamless interaction between the live dashboard and your notes
+- **Bootblack Briefing** — Automatically generates a daily market summary analysing sentiment and flagging notable movers, powered by the Claude API
 - **Flexible grouping** — Define groups freely in `stocks.yaml`; groups that exceed the stock limit are split into sub-groups automatically
-- **Obsidian injection** — Generates an HTML file and writes it into a target `.md` file as an `<iframe>`; uses comment markers for precise replacement without touching surrounding content
-- **Auto-publish & scheduling** — Windows Task Scheduler triggers runs at 15:35 (A-shares close) and 05:05 (US close) on weekdays; results are pushed to GitHub Pages automatically after each run
-- **Bootblack Briefing** — Calls the Claude API after each run to generate a terse, slightly sardonic daily market summary in both Chinese and English; cached locally so the API is only called once per day
 
 ---
 
