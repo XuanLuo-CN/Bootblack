@@ -15,10 +15,10 @@
 
 ## Features
 - **Automated pipeline** — Fetches stock prices daily after each market close, runs return analysis and ranking, and publishes the result to GitHub Pages automatically
-- **Interactive dashboard** — Normalised line charts, switchable time ranges, and a 7-day ranking bar chart. Click any label to open a stock detail panel with one-click links to Tonghuashun and Xueqiu.
-- **Obsidian integration** — The generated HTML is injected into a `.md` file via `<iframe>` and rendered by Obsidian's Custom Frames plugin, enabling seamless interaction between the live dashboard and your notes
 - **Bootblack Briefing** — Automatically generates a daily market summary analysing sentiment and flagging notable movers, powered by the Claude API
-- **Flexible grouping** — Define groups freely in `stocks.yaml`; groups that exceed the stock limit are split into sub-groups automatically
+- **Obsidian integration** — The generated HTML is injected into `.md` file via `<iframe>` and rendered by Obsidian's Custom Frames plugin, enabling seamless interaction between the live dashboard and your notes
+- **Interactive dashboard** — Normalised line charts, switchable time ranges, and a 7-day ranking bar chart. Click any label to open a stock detail panel with one-click links to [Tonghuashun](https://www.10jqka.com.cn/) and [Xueqiu](https://xueqiu.com/).
+- **Flexible setting** — Define stocks and groups freely in `stocks.yaml`; groups that exceed the stock limit are split into sub-groups automatically
 
 ---
 
