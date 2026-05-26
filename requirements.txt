@@ -2,3 +2,4 @@ akshare
 yfinance
 pyyaml
 requests
+anthropic

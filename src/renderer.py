@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -31,6 +32,50 @@ def _load_meta() -> dict:
     return out
 
 
+def _build_briefing_info(briefing: dict) -> str:
+    parts = []
+    if briefing.get("generated_date"):
+        delta = (date.today() - date.fromisoformat(briefing["generated_date"])).days
+        label = "today" if delta == 0 else f"{delta} day{'s' if delta > 1 else ''} ago"
+        parts.append(f"Generated {label}")
+    if briefing.get("days_remaining") is not None:
+        parts.append(f"~{briefing['days_remaining']} days of credit remaining")
+    return " · ".join(parts)
+
+
+def _briefing_to_html(text: str) -> str:
+    """Parse **Title** sections into newspaper-style HTML blocks."""
+    if not text:
+        return ""
+
+    def esc(s: str) -> str:
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    parts = re.split(r"\*\*([^*\n]+)\*\*", text.strip())
+    # parts: [pre-header-text, title1, body1, title2, body2, ...]
+    sections: list[dict] = []
+    if parts[0].strip():
+        sections.append({"title": None, "text": parts[0].strip()})
+    for i in range(1, len(parts), 2):
+        title = parts[i].strip()
+        body  = parts[i + 1].strip() if i + 1 < len(parts) else ""
+        sections.append({"title": title, "text": body})
+
+    if not sections:
+        return f'<p class="bf-text">{esc(text)}</p>'
+
+    def render_section(s: dict, is_overview: bool) -> str:
+        title_html = f'<div class="bf-stitle">{esc(s["title"])}</div>' if s["title"] else ""
+        body_html  = esc(s["text"]).replace("\n\n", "</p><p class=\"bf-text\">").replace("\n", " ")
+        css = "bf-overview" if is_overview else "bf-section"
+        return f'<div class="{css}">{title_html}<p class="bf-text">{body_html}</p></div>'
+
+    overview_html = render_section(sections[0], is_overview=True)
+    group_html = "".join(render_section(s, is_overview=False) for s in sections[1:])
+    grid = f'<div class="bf-grid">{group_html}</div>' if group_html else ""
+    return overview_html + grid
+
+
 def _agg_weekly(records: list) -> list:
     """Return last trading day of each ISO week (weekly close aggregation)."""
     by_week: dict = {}
@@ -40,11 +85,12 @@ def _agg_weekly(records: list) -> list:
     return sorted(by_week.values(), key=lambda r: r["date"])
 
 
-def render(groups: list, output_path: Path = OUTPUT_PATH) -> None:
+def render(groups: list, output_path: Path = OUTPUT_PATH, briefing: dict | None = None) -> None:
     """
     Render fetcher output to a self-contained HTML dashboard.
 
-    groups: list returned by fetcher.fetch_all()
+    groups:   list returned by fetcher.fetch_all()
+    briefing: optional {"cn": "...", "en": "..."} from briefing.generate()
     """
     meta = _load_meta()
 
@@ -134,6 +180,30 @@ def render(groups: list, output_path: Path = OUTPUT_PATH) -> None:
                 sub_name = f"{group['name']} ({part_idx + 1}/{n_parts})"
                 chart_groups.append({"name": sub_name, "series": part})
 
+    # Build per-stock metadata for the click popup
+    stock_meta: dict = {}
+    for group in groups:
+        for s in group.get("stocks", []):
+            d = s.get("data", [])
+            if not d:
+                continue
+            sm = meta.get(s["code"], {})
+            last = d[-1]
+            last_price = float(last.get("close") or 0)
+            open_today = float(last.get("open") or last_price) or 1
+            change_today = (last_price - open_today) / open_today * 100
+            base_7d = float(d[max(0, len(d) - 8)].get("close") or last_price) or 1
+            change_7d = (last_price - base_7d) / base_7d * 100
+            stock_meta[s["code"]] = {
+                "name": s["name"],
+                "code": s["code"],
+                "market": s["market"],
+                "desc": sm.get("desc", ""),
+                "last_price": round(last_price, 2),
+                "change_today": round(change_today, 2),
+                "change_7d": round(change_7d, 2),
+            }
+
     # Pre-compute page height so writer.py can set iframe height without JS
     n_groups_with_data = sum(1 for g in chart_groups if g["series"])
     n_rank_rows = max(
@@ -142,6 +212,14 @@ def render(groups: list, output_path: Path = OUTPUT_PATH) -> None:
     )
     n_chart_rows = (n_groups_with_data + charts_per_row - 1) // charts_per_row
     page_height = max(200 + n_chart_rows * 420 + 40 + n_rank_rows * 30 + 200, 1200)
+
+    has_briefing = bool(briefing and (briefing.get("cn") or briefing.get("en")))
+    briefing_cn_html = _briefing_to_html((briefing or {}).get("cn", ""))
+    briefing_en_html = _briefing_to_html((briefing or {}).get("en", ""))
+    briefing_hidden  = "" if has_briefing else ' style="display:none"'
+    briefing_info    = _build_briefing_info(briefing) if has_briefing else ""
+    if has_briefing:
+        page_height += 180
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     html = _TEMPLATE
@@ -152,6 +230,11 @@ def render(groups: list, output_path: Path = OUTPUT_PATH) -> None:
     html = html.replace("__RANKING_LIMIT__", str(ranking_limit))
     html = html.replace("__COLS__", str(charts_per_row))
     html = html.replace("__HEIGHT__", str(page_height))
+    html = html.replace("__STOCK_META__", json.dumps(stock_meta, ensure_ascii=False))
+    html = html.replace("__BRIEFING_CN_HTML__", briefing_cn_html)
+    html = html.replace("__BRIEFING_EN_HTML__", briefing_en_html)
+    html = html.replace("__BRIEFING_HIDDEN__", briefing_hidden)
+    html = html.replace("__BRIEFING_INFO__", briefing_info)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")
@@ -159,10 +242,13 @@ def render(groups: list, output_path: Path = OUTPUT_PATH) -> None:
 
 
 # ---------------------------------------------------------------------------
-# HTML template — placeholders: __GROUPS__  __RANKINGS__  __UPDATED__  __RANKING_LIMIT__
+# HTML template
+# Placeholders: __GROUPS__  __RANKINGS__  __RANKINGS_TODAY__  __UPDATED__
+#               __RANKING_LIMIT__  __COLS__  __HEIGHT__  __STOCK_META__
+#               __BRIEFING_CN__  __BRIEFING_EN__  __BRIEFING_HIDDEN__
 # ---------------------------------------------------------------------------
 _TEMPLATE = r"""<!DOCTYPE html>
-<html lang="zh-CN" data-bb-height="__HEIGHT__">
+<html lang="en" data-bb-height="__HEIGHT__">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -184,31 +270,27 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 #charts { display: grid; grid-template-columns: repeat(__COLS__, 1fr); }
 .group-sec { padding: 20px 24px 8px; }
 .group-title { font-size: 10px; font-weight: 600; color: #444; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
-.chart-wrap { position: relative; height: 320px; }
+.chart-wrap { position: relative; height: 320px; overflow: visible; }
 /* Weaken TradingView attribution logo */
 .tv-lightweight-charts a[href*="tradingview"] {
   opacity: 0.12 !important;
   transform: scale(0.55) !important;
   transform-origin: bottom right !important;
 }
-.chart-el { width: 100%; height: 100%; }
+.chart-el { width: calc(100% - 90px); height: 100%; }
 
-.label-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.label-layer { position: absolute; inset: 0; pointer-events: none; overflow: visible; z-index: 6; }
 .slabel {
   position: absolute;
-  right: 72px;
-  transform: translateY(-50%);
-  font-size: 10.5px;
-  padding: 1px 6px;
+  font-size: 11px;
+  padding: 1px 5px;
   border-radius: 2px;
-  cursor: default;
-  pointer-events: all;
   white-space: nowrap;
-  border-left: 2px solid currentColor;
+  pointer-events: auto;
+  cursor: pointer;
   background: rgba(20,20,18,0.82);
-  transition: opacity .1s;
 }
-.slabel:hover { opacity: 0.85; }
+.slabel:hover { opacity: 0.8; }
 
 .c-tooltip {
   position: absolute; background: rgba(30,30,28,0.92); border: 1px solid #2e2e2c;
@@ -217,14 +299,19 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
   white-space: nowrap; line-height: 1.9;
 }
 
-#lpopup {
-  position: fixed; background: #252523; border: 1px solid #363634;
-  border-radius: 6px; padding: 11px 14px; font-size: 12px;
-  max-width: 320px; z-index: 999; display: none;
-  box-shadow: 0 8px 24px rgba(0,0,0,.55); pointer-events: none;
+#spopup {
+  position: fixed; background: #2a2a28; border: 1px solid #3a3a38;
+  border-radius: 8px; padding: 14px; min-width: 200px; max-width: 300px;
+  z-index: 9999; display: none; box-shadow: 0 8px 24px rgba(0,0,0,.6);
+  font-size: 12px; color: #e0e0e0;
 }
-#lpopup .lp-market { font-size: 10px; color: #555; margin-bottom: 6px; letter-spacing: 0.05em; }
-#lpopup .lp-desc { color: #b0b0b0; line-height: 1.6; font-size: 12px; }
+.sp-hr { border-top: 1px solid #3a3a38; margin: 10px 0; }
+.sp-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.sp-row span:first-child { color: #888; font-size: 11px; }
+.sp-row span:last-child { font-size: 11px; font-weight: 500; }
+.sp-name { font-weight: 600; font-size: 13px; }
+.sp-btn { background: #333331; border: 1px solid #3a3a38; color: #aaa; padding: 5px 0; border-radius: 3px; cursor: pointer; font-size: 11px; flex: 1; }
+.sp-btn:hover { background: #3a3a38; color: #ccc; }
 
 /* ── Ranking dual-column layout ── */
 #ranking { padding: 32px 32px 56px; }
@@ -251,6 +338,21 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 .rg-pct { flex-shrink: 0; width: 46px; font-size: 10.5px; color: #5BAD7F; text-align: left; padding-left: 5px; }
 .rank-row-gain .rg-bar-area { flex: 1; position: relative; height: 14px; overflow: hidden; min-width: 0; }
 .rg-bar { position: absolute; left: 0; top: 0; height: 100%; background: #5BAD7F; border-radius: 0 3px 3px 0; }
+
+/* ── Daily briefing (newspaper style) ── */
+#briefing { padding: 28px 32px 36px; border-bottom: 1px solid #1e1e1c; }
+.bf-masthead { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 10px; border-bottom: 3px double #2e2e2c; margin-bottom: 20px; }
+.bf-masthead-left { font-size: 10px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #555; }
+.bf-masthead-right { display: flex; align-items: center; gap: 18px; }
+.bf-meta { font-size: 10px; color: #3a3a38; letter-spacing: 0.05em; }
+.bl-btn { background: none; border: none; font-size: 11px; cursor: pointer; padding: 0; transition: color 0.15s; }
+.bf-content { transition: opacity 0.15s; }
+.bf-overview { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #1e1e1c; }
+.bf-overview .bf-text { font-size: 13px; color: #c8c8c8; line-height: 1.85; font-style: italic; }
+.bf-stitle { font-size: 8.5px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #4a4a48; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid #1e1e1c; }
+.bf-section .bf-text { font-size: 11.5px; color: #888; line-height: 1.75; }
+.bf-text { margin: 0; }
+.bf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px 28px; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -266,16 +368,31 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
   <h1>BOOTBLACK</h1>
   <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px;">
     <span class="ts">__UPDATED__</span>
-    <button class="tbtn" onclick="buildCharts();buildRanking()">刷新</button>
+    <button class="tbtn" onclick="buildCharts();buildRanking()">Refresh</button>
   </div>
 </div>
 
+<div id="briefing"__BRIEFING_HIDDEN__>
+  <div class="bf-masthead">
+    <span class="bf-masthead-left">Daily Briefing</span>
+    <div class="bf-masthead-right">
+      <span class="bf-meta">__BRIEFING_INFO__</span>
+      <div style="display:flex;gap:10px;">
+        <button class="bl-btn" id="bl-cn" onclick="setBriefingLang('cn')">中文</button>
+        <button class="bl-btn" id="bl-en" onclick="setBriefingLang('en')">EN</button>
+      </div>
+    </div>
+  </div>
+  <div id="bf-cn" class="bf-content">__BRIEFING_CN_HTML__</div>
+  <div id="bf-en" class="bf-content" style="display:none">__BRIEFING_EN_HTML__</div>
+</div>
+
 <div id="toggle-bar">
-  <button class="tbtn active" id="btn-d" onclick="setMode('daily')">日线</button>
-  <button class="tbtn" id="btn-w" onclick="setMode('weekly')">周线</button>
+  <button class="tbtn active" id="btn-d" onclick="setMode('daily')">Daily</button>
+  <button class="tbtn" id="btn-w" onclick="setMode('weekly')">Weekly</button>
   <div style="margin-left:auto;display:flex;gap:6px;">
-    <button class="tbtn" id="btn-2w" onclick="setRangeFilter('2w')">2周</button>
-    <button class="tbtn" id="btn-2m" onclick="setRangeFilter('2m')">2月</button>
+    <button class="tbtn" id="btn-2w" onclick="setRangeFilter('2w')">2W</button>
+    <button class="tbtn" id="btn-2m" onclick="setRangeFilter('2m')">2M</button>
   </div>
 </div>
 
@@ -284,16 +401,32 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
   <div style="display:flex;align-items:center;margin-bottom:18px;">
     <h2 id="ranking-title">7-Day Performance</h2>
     <div style="margin-left:auto;display:flex;gap:6px;">
-      <button class="tbtn active" id="btn-r7" onclick="setRankingMode('7d')">7日</button>
-      <button class="tbtn" id="btn-r1" onclick="setRankingMode('today')">今日</button>
+      <button class="tbtn active" id="btn-r7" onclick="setRankingMode('7d')">7D</button>
+      <button class="tbtn" id="btn-r1" onclick="setRankingMode('today')">Today</button>
     </div>
   </div>
   <div id="rbars"></div>
 </div>
 
-<div id="lpopup">
-  <div class="lp-market"></div>
-  <div class="lp-desc"></div>
+<div id="spopup">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <div><span class="sp-name"></span><span class="sp-code" style="color:#888;font-size:11px;margin-left:6px;"></span></div>
+    <span class="sp-market" style="font-size:10px;padding:2px 7px;border-radius:3px;color:#fff;font-weight:500;margin-left:8px;flex-shrink:0;"></span>
+  </div>
+  <div class="sp-hr"></div>
+  <div class="sp-row"><span>Today</span><span class="sp-today"></span></div>
+  <div class="sp-row"><span>Price</span><span class="sp-price" style="color:#ccc;"></span></div>
+  <div class="sp-row" style="margin-bottom:0;"><span>7D</span><span class="sp-7d"></span></div>
+  <div class="sp-desc-block">
+    <div class="sp-hr"></div>
+    <div style="font-size:10px;color:#555;letter-spacing:0.08em;margin-bottom:5px;">Notes</div>
+    <div class="sp-desc" style="font-size:11px;color:#b0b0b0;line-height:1.6;"></div>
+  </div>
+  <div class="sp-hr"></div>
+  <div style="display:flex;gap:6px;">
+    <button class="sp-btn sp-ths">同花顺</button>
+    <button class="sp-btn sp-xq">雪球</button>
+  </div>
 </div>
 
 <script>
@@ -301,8 +434,8 @@ const GROUPS = __GROUPS__;
 const RANKINGS = __RANKINGS__;
 const RANKINGS_TODAY = __RANKINGS_TODAY__;
 const RANKING_LIMIT = __RANKING_LIMIT__;
-const MKTLABEL = { a: 'A股', hk: '港股', us: '美股' };
-
+const STOCK_META = __STOCK_META__;
+const MKTLABEL = { a: 'A', hk: 'HK', us: 'US' };
 let mode = 'daily';
 let rangeFilter = null;   // null | '2w' | '2m'
 let rankingMode = '7d';   // '7d' | 'today'
@@ -335,12 +468,43 @@ function refreshChartData(state) {
   });
   state.maxDataLen = maxLen;
   state.chart.timeScale().fitContent();
-  setTimeout(() => placeLabels(state), 150);
+  setTimeout(() => {
+    state.chart.timeScale().fitContent();
+    requestAnimationFrame(() => requestAnimationFrame(() => placeLabels(state)));
+  }, 150);
+}
+
+function initBriefing() {
+  const cnBtn = document.getElementById('bl-cn');
+  if (!cnBtn) return;
+  cnBtn.style.color = '#e0e0e0';
+  document.getElementById('bl-en').style.color = '#555';
+}
+
+let _briefingLang = 'cn';
+function setBriefingLang(lang) {
+  if (lang === _briefingLang) return;
+  const from = document.getElementById('bf-' + _briefingLang);
+  const to   = document.getElementById('bf-' + lang);
+  _briefingLang = lang;
+  from.style.opacity = '0';
+  setTimeout(function() {
+    from.style.display = 'none';
+    from.style.opacity = '1';
+    to.style.display   = '';
+    to.style.opacity   = '0';
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { to.style.opacity = '1'; });
+    });
+  }, 150);
+  document.getElementById('bl-cn').style.color = lang === 'cn' ? '#e0e0e0' : '#555';
+  document.getElementById('bl-en').style.color = lang === 'en' ? '#e0e0e0' : '#555';
 }
 
 function init() {
   buildCharts();
   buildRanking();
+  initBriefing();
 }
 
 // ── Chart building ──────────────────────────────────────────────────────────
@@ -370,6 +534,10 @@ function buildCharts() {
     labelLayer.className = 'label-layer';
     wrap.appendChild(labelLayer);
 
+    const overlayCanvas = document.createElement('canvas');
+    overlayCanvas.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:5;';
+    wrap.appendChild(overlayCanvas);
+
     const cTooltip = document.createElement('div');
     cTooltip.className = 'c-tooltip';
     wrap.appendChild(cTooltip);
@@ -389,7 +557,8 @@ function buildCharts() {
         vertLine: { color: '#3a3a38', width: 1, style: 3 },
         horzLine: { color: '#3a3a38', width: 1, style: 3 },
       },
-      rightPriceScale: { borderColor: '#2c2c2a' },
+      rightPriceScale: { visible: false },
+      leftPriceScale: { visible: true, borderVisible: false },
       timeScale: {
         borderColor: '#2c2c2a',
         timeVisible: true,
@@ -404,7 +573,7 @@ function buildCharts() {
             const d = new Date(time * 1000);
             month = d.getUTCMonth() + 1; day = d.getUTCDate();
           }
-          if (tickMarkType <= 1) return month + '月';
+          if (tickMarkType <= 1) return 'M' + month;
           return month + '/' + day;
         },
       },
@@ -417,6 +586,7 @@ function buildCharts() {
         topColor: s.color + '26',
         bottomColor: s.color + '04',
         lineWidth: 1.5,
+        priceScaleId: 'left',
         priceLineVisible: false,
         lastValueVisible: false,
         crosshairMarkerVisible: true,
@@ -445,6 +615,8 @@ function buildCharts() {
           chart.timeScale().setVisibleLogicalRange({ from: clampedFrom, to: clampedTo });
         });
       }
+      clearTimeout(state._labelTimer);
+      state._labelTimer = setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => placeLabels(state))), 60);
     });
 
     chart.subscribeCrosshairMove(param => {
@@ -487,6 +659,7 @@ function buildCharts() {
     state.chart = chart;
     state.seriesArr = seriesArr;
     state.labelLayer = labelLayer;
+    state.overlayCanvas = overlayCanvas;
     state.cTooltip = cTooltip;
     state.chartEl = chartEl;
     chartStates.push(state);
@@ -497,9 +670,24 @@ function buildCharts() {
 // ── End-of-series labels ────────────────────────────────────────────────────
 
 function placeLabels(state) {
-  const { chart, seriesArr, labelLayer, chartEl } = state;
+  const { seriesArr, labelLayer, overlayCanvas, chartEl } = state;
+
   labelLayer.innerHTML = '';
+
+  // Size canvas from the wrapping container (chart-el + 90px label zone)
+  const wrap = overlayCanvas.parentElement;
+  const OW = wrap ? wrap.clientWidth : 0;
+  const OH = wrap ? wrap.clientHeight : 0;
+  if (!OW || !OH) return;
+  overlayCanvas.width = OW;
+  overlayCanvas.height = OH;
+  const ctx = overlayCanvas.getContext('2d');
+  ctx.clearRect(0, 0, OW, OH);
+
+  const chartW = chartEl.clientWidth;   // right boundary of TradingView canvas
   const H = chartEl.clientHeight;
+  if (!chartW || !H) return;
+
   const positions = [];
 
   seriesArr.forEach(({ ser, meta }) => {
@@ -507,48 +695,123 @@ function placeLabels(state) {
     if (!data || !data.length) return;
     const lastPt = data[data.length - 1];
     const y = ser.priceToCoordinate(lastPt.value);
-    if (y === null || y < 8 || y > H - 8) return;
-    positions.push({ y, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market });
+    if (y === null) return;
+    positions.push({ actualY: y, y, pct: lastPt.value, code: meta.code, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market });
   });
 
-  positions.sort((a, b) => a.y - b.y);
-  const GAP = 17;
+  // Sort by P&L descending: highest gainer at top (smallest y on screen)
+  positions.sort((a, b) => b.pct - a.pct);
+
+  const GAP = 18;
   for (let i = 1; i < positions.length; i++) {
     if (positions[i].y - positions[i - 1].y < GAP) {
       positions[i].y = positions[i - 1].y + GAP;
     }
   }
 
+  if (positions.length > 0) {
+    const overflow = positions[positions.length - 1].y - (H - 8);
+    if (overflow > 0) positions.forEach(p => p.y -= overflow);
+  }
+
   positions.forEach(p => {
+    // Connector in the label zone: from chart right edge at actual price Y → label Y
+    ctx.save();
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(chartW, p.actualY);
+    ctx.lineTo(chartW + 6, p.y);
+    ctx.stroke();
+    ctx.restore();
+
     const el = document.createElement('div');
     el.className = 'slabel';
     el.textContent = p.name;
-    el.style.top = p.y + 'px';
+    el.style.left = (chartW + 8) + 'px';
+    el.style.top = (p.y - 8) + 'px';
     el.style.color = p.color;
-    el.addEventListener('mouseenter', e => showPopup(e, p));
-    el.addEventListener('mousemove', e => movePopup(e));
-    el.addEventListener('mouseleave', hidePopup);
+    // Left-click: show detail popup
+    el.addEventListener('click', e => { e.stopPropagation(); showStockPopup(e, p.code); });
+    // Right-click or long-press: jump to THS directly
+    el.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      const m = STOCK_META[p.code];
+      if (m) window.open(ths_url(m.code, m.market), '_blank');
+    });
+    let _lpt = null;
+    el.addEventListener('touchstart', () => { _lpt = setTimeout(() => { const m = STOCK_META[p.code]; if (m) window.open(ths_url(m.code, m.market), '_blank'); }, 600); }, { passive: true });
+    el.addEventListener('touchend',  () => clearTimeout(_lpt), { passive: true });
+    el.addEventListener('touchmove', () => clearTimeout(_lpt), { passive: true });
     labelLayer.appendChild(el);
   });
 }
 
-// ── Label popup ─────────────────────────────────────────────────────────────
+// ── Stock detail popup ───────────────────────────────────────────────────────
 
-function showPopup(e, p) {
-  const pp = document.getElementById('lpopup');
-  pp.querySelector('.lp-market').textContent = MKTLABEL[p.market] || p.market;
-  pp.querySelector('.lp-desc').textContent = p.desc || '';
-  pp.querySelector('.lp-desc').style.display = p.desc ? '' : 'none';
-  pp.style.left = (e.clientX + 14) + 'px';
-  pp.style.top = (e.clientY - 10) + 'px';
+function ths_url(code, market) {
+  if (market === 'hk') return 'https://stockpage.10jqka.com.cn/HK/' + code + '/';
+  return 'https://stockpage.10jqka.com.cn/' + code + '/';
+}
+
+function xueqiu_url(code, market) {
+  if (market === 'us') return 'https://xueqiu.com/S/' + code;
+  if (market === 'hk') return 'https://xueqiu.com/S/HK' + code;
+  return 'https://xueqiu.com/S/' + (code.startsWith('6') ? 'SH' : 'SZ') + code;
+}
+
+function showStockPopup(e, code) {
+  const m = STOCK_META[code];
+  if (!m) return;
+  const pp = document.getElementById('spopup');
+
+  pp.querySelector('.sp-name').textContent = m.name;
+  pp.querySelector('.sp-code').textContent = m.code;
+
+  const badge = pp.querySelector('.sp-market');
+  badge.textContent = MKTLABEL[m.market] || m.market;
+  badge.style.background = { a: '#3D9162', hk: '#2E7DD1', us: '#8B7EC8' }[m.market] || '#555';
+
+  const todayEl = pp.querySelector('.sp-today');
+  todayEl.textContent = (m.change_today >= 0 ? '+' : '') + m.change_today.toFixed(2) + '%';
+  todayEl.style.color = m.change_today >= 0 ? '#5BAD7F' : '#D4667A';
+
+  pp.querySelector('.sp-price').textContent = m.last_price.toFixed(2);
+
+  const el7d = pp.querySelector('.sp-7d');
+  el7d.textContent = (m.change_7d >= 0 ? '+' : '') + m.change_7d.toFixed(2) + '%';
+  el7d.style.color = m.change_7d >= 0 ? '#5BAD7F' : '#D4667A';
+
+  const descBlock = pp.querySelector('.sp-desc-block');
+  if (m.desc) {
+    pp.querySelector('.sp-desc').textContent = m.desc;
+    descBlock.style.display = '';
+  } else {
+    descBlock.style.display = 'none';
+  }
+
+  pp.querySelector('.sp-ths').onclick = () => window.open(ths_url(m.code, m.market), '_blank');
+  pp.querySelector('.sp-xq').onclick  = () => window.open(xueqiu_url(m.code, m.market), '_blank');
+
+  // Measure then position
+  pp.style.visibility = 'hidden';
   pp.style.display = 'block';
+  const ppW = pp.offsetWidth, ppH = pp.offsetHeight;
+  const vpW = window.innerWidth, vpH = window.innerHeight;
+  const r = e.target.getBoundingClientRect();
+  let left = r.right + 8;
+  if (left + ppW > vpW - 8) left = r.left - ppW - 8;
+  let top = r.top - 20;
+  if (top + ppH > vpH - 8) top = vpH - ppH - 8;
+  pp.style.left = Math.max(4, left) + 'px';
+  pp.style.top  = Math.max(4, top)  + 'px';
+  pp.style.visibility = '';
 }
-function movePopup(e) {
-  const pp = document.getElementById('lpopup');
-  pp.style.left = (e.clientX + 14) + 'px';
-  pp.style.top = (e.clientY - 10) + 'px';
-}
-function hidePopup() { document.getElementById('lpopup').style.display = 'none'; }
+
+document.addEventListener('click', e => {
+  const pp = document.getElementById('spopup');
+  if (pp.style.display !== 'none' && !pp.contains(e.target)) pp.style.display = 'none';
+});
 
 // ── Toggle daily / weekly ───────────────────────────────────────────────────
 
@@ -664,7 +927,7 @@ init();
 function fitFrame() {
   try {
     if (!window.frameElement) return;
-    const ids = ['header', 'toggle-bar', 'charts', 'ranking'];
+    const ids = ['header', 'briefing', 'toggle-bar', 'charts', 'ranking'];
     const bottom = ids.reduce((max, id) => {
       const el = document.getElementById(id);
       return el ? Math.max(max, el.offsetTop + el.offsetHeight) : max;

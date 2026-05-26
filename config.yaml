@@ -1,20 +1,25 @@
-# Bootblack 配置文件
+# Bootblack configuration
 obsidian:
-  vault_path: "PLACEHOLDER"          # Obsidian vault 根目录，例如 C:/Users/you/Obsidian/MyVault
-  output_folder: "Stock Reports"     # vault 内的输出子目录
-  md_path: "D:/Download/Documents/Obsidian Vault/Xuan Luo.md" 
+  vault_path: "PLACEHOLDER"          # root path to your Obsidian vault, e.g. C:/Users/you/Obsidian/MyVault
+  output_folder: "Stock Reports"     # output subfolder inside the vault
+  md_path: "D:/Download/Documents/Obsidian Vault/Xuan Luo.md"
 
 data:
-  cache_dir: "output/"               # 本地缓存目录
+  cache_dir: "output/"               # local cache directory
 
 schedule:
-  a_shares: "15:35"                  # A股任务触发时间（工作日，本地时间）
-  us_stocks: "05:05"                 # 美股任务触发时间（工作日，本地时间）
+  a_shares: "15:35"                  # A-share trigger time (weekdays, local time)
+  us_stocks: "05:05"                 # US-stock trigger time (weekdays, local time)
   timezone: "Asia/Shanghai"
 
 git:
-  auto_push: true                    # false 时跳过第五步 git push，方便本地调试
+  auto_push: true                    # set false to skip git push (useful for local debugging)
 
-ranking_limit: 10                    # 排行榜每侧最多显示的股票数
-charts_per_row: 1                    # 每行显示的图表数量
-group_max_stocks: 8                  # 每个图表最多显示的股票数，超出自动拆分子组
+ranking_limit: 10                    # max stocks shown per side in the ranking bars
+charts_per_row: 1                    # number of chart columns per row
+group_max_stocks: 8                  # max stocks per chart; groups larger than this are split automatically
+
+briefing:
+  # api_key is stored in .secrets.yaml (gitignored) — do not add it here
+  model: "claude-haiku-4-5-20251001" # override with claude-sonnet-4-6 for better quality
+  credit: 5.00                       # initial credit loaded in USD; used to estimate days remaining

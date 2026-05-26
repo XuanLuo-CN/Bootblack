@@ -1,9 +1,23 @@
 groups:
-  - name: 主力股
+  - name: 段永平
     stocks:
+      - name: 特斯拉
+        code: TSLA
+        market: us
+      - name: 拼多多
+        code: PDD
+        market: us
+      - name: 谷歌
+        code: GOOGL
+        market: us
+      - name: 伯克希尔
+        code: BRK-B
+        market: us
       - name: 英伟达
         code: NVDA
-        market: us  # us / hk / a
+        market: us
+  - name: 主力股
+    stocks:
       - name: 五粮液
         code: "000858"
         market: a
@@ -125,3 +139,4 @@ groups:
         code: "06978"
         market: hk
         desc: 公司核心创始人王歈博士已提交辞呈，将辞去执行董事、首席执行官及首席科技官职务，辞职自2025年6月25日起生效。
+

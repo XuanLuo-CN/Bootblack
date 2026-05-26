@@ -1,8 +1,11 @@
 """
-main.py — Bootblack 全流程入口
+main.py — Bootblack pipeline entry point
 
-正常运行：  python src/main.py
-测试模式：  python src/main.py --test   （用假数据，跳过真实 API 调用）
+Normal run:            python src/main.py
+Refresh briefing:      python src/main.py --briefing   (calls Claude API, costs ~$0.001)
+Test mode:             python src/main.py --test       (synthetic data, skips real API calls)
+
+Scheduled runs never call the briefing API — use --briefing explicitly to refresh.
 """
 
 import subprocess
@@ -16,6 +19,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import yaml
 
+import briefing as briefing_mod
 import exporter
 import fetcher
 import renderer
@@ -43,50 +47,53 @@ def _git_push() -> None:
         )
         if result.returncode != 0:
             if "nothing to commit" in result.stdout or "nothing to commit" in result.stderr:
-                print("[Bootblack] 无变更，跳过推送")
+                print("[Bootblack] nothing to commit, skipping push")
                 return
-            print(f"[ERROR] git commit 失败：{result.stderr.strip()}")
+            print(f"[ERROR] git commit failed: {result.stderr.strip()}")
             return
         subprocess.run(
             ["git", "push"],
             cwd=ROOT, check=True, capture_output=True,
         )
-        print(f"[OK] 已推送到 GitHub（{msg}）")
+        print(f"[OK] pushed to GitHub ({msg})")
     except subprocess.CalledProcessError as e:
-        print(f"[ERROR] git 操作失败：{e.stderr.decode(errors='replace').strip() if e.stderr else e}")
+        print(f"[ERROR] git error: {e.stderr.decode(errors='replace').strip() if e.stderr else e}")
 
 
 def run() -> None:
-    """完整流程：抓取 → 渲染 → 注入 → 导出 → 推送。"""
+    """Full pipeline: fetch → briefing → render → inject → export → push."""
     with open(CONFIG_PATH, encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
     auto_push = cfg.get("git", {}).get("auto_push", False)
 
-    total = 5 if auto_push else 4
+    total = 6 if auto_push else 5
     t0 = time.perf_counter()
 
-    _step(1, total, "抓取股价数据")
+    _step(1, total, "fetching price data")
     groups = fetcher.fetch_all()
 
-    _step(2, total, "生成可视化图表")
-    renderer.render(groups)
+    _step(2, total, "generating briefing")
+    brief = briefing_mod.generate(groups, force="--briefing" in sys.argv)
 
-    _step(3, total, "注入 Obsidian 文件")
+    _step(3, total, "rendering charts")
+    renderer.render(groups, briefing=brief)
+
+    _step(4, total, "injecting Obsidian file")
     writer.inject()
 
-    _step(4, total, "导出股票清单")
+    _step(5, total, "exporting stock list")
     exporter.export()
 
     if auto_push:
-        _step(5, total, "推送到 GitHub")
+        _step(6, total, "pushing to GitHub")
         _git_push()
 
     elapsed = time.perf_counter() - t0
-    print(f"[Bootblack] 完成  耗时 {elapsed:.1f}s")
+    print(f"[Bootblack] done  {elapsed:.1f}s")
 
 
 # ---------------------------------------------------------------------------
-# 测试模式：用假数据验证 renderer / writer / exporter 三步管道
+# Test mode: run renderer / writer / exporter pipeline with synthetic data
 # ---------------------------------------------------------------------------
 import random
 
@@ -113,13 +120,12 @@ def _fake_stock(name: str, code: str, market: str, price: float) -> dict:
 
 
 def run_test() -> None:
-    """测试模式：假数据跑完 renderer → writer → exporter，跳过真实 API。"""
+    """Test mode: run renderer → writer → exporter with synthetic data, skipping real API calls."""
     total = 3
     t0 = time.perf_counter()
 
     test_groups = [
         {"name": "主力股", "stocks": [
-            _fake_stock("英伟达",   "NVDA",   "us", 130.0),
             _fake_stock("五粮液",   "000858", "a",  120.0),
             _fake_stock("新易盛",   "300502", "a",  185.0),
             _fake_stock("铖昌科技", "001270", "a",   40.0),
@@ -134,19 +140,31 @@ def run_test() -> None:
             _fake_stock("复宏汉霖", "02696",  "hk",  70.0),
             _fake_stock("迈博药业", "02181",  "hk",   0.55),
         ]},
+        {"name": "段永平", "stocks": [
+            _fake_stock("特斯拉",   "TSLA",   "us", 340.0),
+            _fake_stock("拼多多",   "PDD",    "us", 110.0),
+            _fake_stock("谷歌",     "GOOGL",  "us", 175.0),
+            _fake_stock("伯克希尔", "BRK-B",  "us", 530.0),
+            _fake_stock("英伟达",   "NVDA",   "us", 130.0),
+        ]},
     ]
 
-    _step(1, total, "生成可视化图表（假数据）")
-    renderer.render(test_groups)
+    fake_brief = {
+        "cn": "测试日报：今日组合整体平稳，合成数据仅供渲染验证，不代表真实行情。",
+        "en": "Test briefing: synthetic data, rendering pipeline only. No markets were harmed.",
+    }
 
-    _step(2, total, "注入 Obsidian 文件")
+    _step(1, total, "rendering charts (synthetic data)")
+    renderer.render(test_groups, briefing=fake_brief)
+
+    _step(2, total, "injecting Obsidian file")
     writer.inject()
 
-    _step(3, total, "导出股票清单")
+    _step(3, total, "exporting stock list")
     exporter.export()
 
     elapsed = time.perf_counter() - t0
-    print(f"[Bootblack] 完成  耗时 {elapsed:.1f}s")
+    print(f"[Bootblack] done  {elapsed:.1f}s")
 
 
 if __name__ == "__main__":
