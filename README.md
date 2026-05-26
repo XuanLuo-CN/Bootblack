@@ -1,7 +1,7 @@
 <table border="0" cellpadding="0" cellspacing="0" style="border:none;border-collapse:collapse;">
   <tr>
-    <td width="200" valign="middle" style="border:none;">
-      <img src="pics/Bootblack_logo_v0.png" alt="Bootblack Logo" width="200"/>
+    <td width="190" valign="middle" style="border:none;">
+      <img src="pics/Bootblack_logo_v0.png" alt="Bootblack Logo" width="190"/>
     </td>
     <td valign="middle" style="padding-left: 24px;border:none;">
       <h1>Bootblack</h1>
@@ -15,15 +15,10 @@
 
 ## Features
 
-- **Multi-market data fetching** — Tracks A-shares, HK stocks, and US stocks simultaneously, triggered automatically after each market close
-- **Normalised line charts** — All stocks in a group start from the same baseline (0%) for fair comparison; toggle between daily / weekly view and 2-week / 2-month / full time ranges
+- **Interactive charts** — Normalised line charts starting from the same 0% baseline for fair comparison; switchable daily / weekly view and 2-week / 2-month / full time ranges; 7-day ranking bar chart; collision-free end labels with guide lines; click any label to open a stock detail panel with one-click links to Tonghuashun and Xueqiu
 - **Flexible grouping** — Define groups freely in `stocks.yaml`; groups that exceed the stock limit are split into sub-groups automatically
-- **7-day performance ranking** — Symmetric dual-column bar chart (losses left, gains right), supports 7-day and intraday modes; click a bar to jump to the stock's quote page
-- **Stock detail panel** — Click any end-of-line label to see ticker, market, today's change, and a short description; one-click links to Tonghuashun and Xueqiu
-- **Collision-free labels** — End labels are automatically staggered with guide lines so they never overlap the chart
 - **Obsidian injection** — Generates an HTML file and writes it into a target `.md` file as an `<iframe>`; uses comment markers for precise replacement without touching surrounding content
-- **Auto-publish** — Pushes `output/bootblack.html` to GitHub after every run; GitHub Pages serves it as a live public URL
-- **Scheduled runs** — Windows Task Scheduler triggers the script at 15:35 (A-shares close) and 05:05 (US close) on every weekday
+- **Auto-publish & scheduling** — Windows Task Scheduler triggers runs at 15:35 (A-shares close) and 05:05 (US close) on weekdays; results are pushed to GitHub Pages automatically after each run
 - **Bootblack Briefing** — Calls the Claude API after each run to generate a terse, slightly sardonic daily market summary in both Chinese and English; cached locally so the API is only called once per day
 
 ---
