@@ -96,3 +96,12 @@ scripts\setup_task.bat
 ---
 
 *Named after the bootblacks of the 19th century — street-corner shoe shiners who handled enough clients each day to know the market's mood before anyone else did.*
+
+---
+
+## Changelog
+
+- **2026-05-23** — Initial build: multi-market data fetching, chart rendering, and Obsidian injection pipeline
+- **2026-05-24** — Designed the Bootblack logo
+- **2026-05-25** — Adaptive chart scaling and automatic collision-free label alignment
+- **2026-05-26** — Bilingual daily briefing powered by the Claude API
