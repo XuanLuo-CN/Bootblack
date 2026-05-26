@@ -15,7 +15,7 @@
 
 ## Features
 
-- **Interactive charts** — Normalised line charts starting from the same 0% baseline for fair comparison; switchable daily / weekly view and 2-week / 2-month / full time ranges; 7-day ranking bar chart; collision-free end labels with guide lines; click any label to open a stock detail panel with one-click links to Tonghuashun and Xueqiu
+- **Interactive charts** — Normalised line charts (all from 0% baseline), switchable time ranges, and a 7-day ranking bar chart. Click any label to open a stock detail panel with one-click links to Tonghuashun and Xueqiu.
 - **Flexible grouping** — Define groups freely in `stocks.yaml`; groups that exceed the stock limit are split into sub-groups automatically
 - **Obsidian injection** — Generates an HTML file and writes it into a target `.md` file as an `<iframe>`; uses comment markers for precise replacement without touching surrounding content
 - **Auto-publish & scheduling** — Windows Task Scheduler triggers runs at 15:35 (A-shares close) and 05:05 (US close) on weekdays; results are pushed to GitHub Pages automatically after each run
