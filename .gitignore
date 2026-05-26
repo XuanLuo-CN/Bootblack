@@ -4,3 +4,4 @@ __pycache__/
 .secrets.yaml
 pics/*
 !pics/Bootblack_logo_v0.png
+!pics/Bootblack_logo.psd
