@@ -696,8 +696,10 @@ function placeLabels(state) {
   const OH = wrap ? wrap.clientHeight : 0;
   if (!OW || !OH) return;
   const dpr = window.devicePixelRatio || 1;
-  overlayCanvas.width = OW * dpr;
-  overlayCanvas.height = OH * dpr;
+  overlayCanvas.width = Math.round(OW * dpr);
+  overlayCanvas.height = Math.round(OH * dpr);
+  overlayCanvas.style.width = OW + 'px';
+  overlayCanvas.style.height = OH + 'px';
   const ctx = overlayCanvas.getContext('2d');
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, OW, OH);
@@ -718,7 +720,7 @@ function placeLabels(state) {
     let pt = null, connX = chartW;
     for (let i = data.length - 1; i >= 0; i--) {
       const rawX = chart.timeScale().timeToCoordinate(data[i].time);
-      if (rawX !== null && priceScaleW + rawX <= chartW + 0.5) {
+      if (rawX !== null && rawX >= 0 && priceScaleW + rawX <= chartW + 0.5) {
         pt = data[i];
         connX = Math.min(priceScaleW + rawX, chartW);
         break;
