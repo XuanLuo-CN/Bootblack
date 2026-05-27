@@ -1,7 +1,7 @@
 <table border="0" cellpadding="0" cellspacing="0" style="border:none;border-collapse:collapse;">
   <tr>
     <td width="190" valign="middle" style="border:none;">
-      <img src="pics/Bootblack_logo_v0.png" alt="Bootblack Logo" width="190"/>
+      <img src="pics/Bootblack_logo_v1.png" alt="Bootblack Logo" width="190"/>
     </td>
     <td valign="middle" style="padding-left: 24px;border:none;">
       <h1>Bootblack</h1>
@@ -104,3 +104,4 @@ scripts\setup_task.bat
 - **2026-05-24** — Designed the Bootblack logo
 - **2026-05-25** — Adaptive chart scaling and automatic collision-free label alignment
 - **2026-05-26** — Bilingual daily briefing powered by the Claude API
+- **2026-05-27** — Fixed guide line alignment between charts and labels; fixed data range clipping across mixed-market groups
