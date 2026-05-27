@@ -119,7 +119,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 <div id="header">
   <h1>BOOTBLACK</h1>
   <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px;">
-    <span class="ts">2026-05-26 20:41</span>
+    <span class="ts">2026-05-26 20:44</span>
     <button class="tbtn" onclick="buildCharts();buildRanking()">Refresh</button>
   </div>
 </div>
@@ -455,12 +455,20 @@ function placeLabels(state) {
   seriesArr.forEach(({ ser, meta }) => {
     const data = meta._disp || meta[mode];
     if (!data || !data.length) return;
-    const lastPt = data[data.length - 1];
-    const y = ser.priceToCoordinate(lastPt.value);
+    // Find the rightmost data point currently visible on screen
+    let pt = null, connX = chartW;
+    for (let i = data.length - 1; i >= 0; i--) {
+      const rawX = chart.timeScale().timeToCoordinate(data[i].time);
+      if (rawX !== null && priceScaleW + rawX <= chartW + 0.5) {
+        pt = data[i];
+        connX = Math.min(priceScaleW + rawX, chartW);
+        break;
+      }
+    }
+    if (!pt) return;
+    const y = ser.priceToCoordinate(pt.value);
     if (y === null) return;
-    const rawX = chart.timeScale().timeToCoordinate(lastPt.time);
-    const connX = rawX !== null ? Math.min(priceScaleW + rawX, chartW) : chartW;
-    positions.push({ actualY: y, y, pct: lastPt.value, code: meta.code, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market, connX });
+    positions.push({ actualY: y, y, pct: pt.value, code: meta.code, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market, connX });
   });
 
   // Sort by P&L descending: highest gainer at top (smallest y on screen)
