@@ -259,7 +259,7 @@ _TEMPLATE = r"""<!-- Copyright (c) 2026 Xuan Luo -- MIT License -->
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; transition: none; }
+body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; transition: none; max-width: 1440px; margin: 0 auto; }
 
 #header { padding: 22px 32px 16px; border-bottom: 1px solid #2c2c2a; display: flex; align-items: baseline; gap: 18px; }
 #header h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.16em; color: #e0e0e0; }
