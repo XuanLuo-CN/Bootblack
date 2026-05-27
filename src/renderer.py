@@ -481,8 +481,8 @@ function refreshChartData(state) {
       const span = range.to - range.from;
       state.chart.timeScale().setVisibleLogicalRange({ from: maxIdx - span, to: maxIdx });
     }
-    requestAnimationFrame(() => requestAnimationFrame(() => placeLabels(state)));
-  }, 150);
+    requestAnimationFrame(() => placeLabels(state));
+  }, 50);
 }
 
 function initBriefing() {
@@ -628,7 +628,7 @@ function buildCharts() {
         });
       }
       clearTimeout(state._labelTimer);
-      state._labelTimer = setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => placeLabels(state))), 60);
+      state._labelTimer = setTimeout(() => requestAnimationFrame(() => placeLabels(state)), 30);
     });
 
     chart.subscribeCrosshairMove(param => {
