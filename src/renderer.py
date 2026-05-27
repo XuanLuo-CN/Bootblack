@@ -730,7 +730,7 @@ function placeLabels(state) {
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(p.connX, p.actualY);
-    ctx.lineTo(p.connX + 6, p.y);
+    ctx.lineTo(chartW + 6, p.y);
     ctx.stroke();
     ctx.restore();
 
