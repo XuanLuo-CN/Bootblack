@@ -406,8 +406,8 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
   <div style="display:flex;align-items:center;margin-bottom:18px;">
     <h2 id="ranking-title">7-Day Performance</h2>
     <div style="margin-left:auto;display:flex;gap:6px;">
-      <button class="tbtn active" id="btn-r7" onclick="setRankingMode('7d')">7D</button>
-      <button class="tbtn" id="btn-r1" onclick="setRankingMode('today')">Today</button>
+      <button class="tbtn active" id="btn-r1" onclick="setRankingMode('today')">1D</button>
+      <button class="tbtn" id="btn-r7" onclick="setRankingMode('7d')">7D</button>
     </div>
   </div>
   <div id="rbars"></div>
@@ -443,7 +443,7 @@ const STOCK_META = __STOCK_META__;
 const MKTLABEL = { a: 'A', hk: 'HK', us: 'US' };
 let mode = 'daily';
 let rangeFilter = null;   // null | '2w' | '2m'
-let rankingMode = '7d';   // '7d' | 'today'
+let rankingMode = 'today';   // '7d' | 'today'
 const chartStates = [];
 
 // ── Time-range helpers ──────────────────────────────────────────────────────
@@ -842,8 +842,8 @@ function setRangeFilter(f) {
 
 function setRankingMode(m) {
   rankingMode = m;
-  document.getElementById('btn-r7').className = 'tbtn' + (m === '7d' ? ' active' : '');
   document.getElementById('btn-r1').className = 'tbtn' + (m === 'today' ? ' active' : '');
+  document.getElementById('btn-r7').className = 'tbtn' + (m === '7d' ? ' active' : '');
   document.getElementById('ranking-title').textContent =
     m === '7d' ? '7-Day Performance' : "Today's Performance";
   buildRanking();
