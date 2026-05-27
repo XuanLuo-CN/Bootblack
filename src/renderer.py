@@ -474,7 +474,7 @@ function refreshChartData(state) {
   state.maxDataLen = maxLen;
   const maxIdx = Math.max(maxLen - 1, 0);
   state.chart.timeScale().fitContent();
-  setTimeout(() => {
+  requestAnimationFrame(() => {
     // Shift range so last bar is flush with the right edge (no empty space)
     const range = state.chart.timeScale().getVisibleLogicalRange();
     if (range && range.to > maxIdx) {
@@ -482,7 +482,7 @@ function refreshChartData(state) {
       state.chart.timeScale().setVisibleLogicalRange({ from: maxIdx - span, to: maxIdx });
     }
     requestAnimationFrame(() => placeLabels(state));
-  }, 50);
+  });
 }
 
 function initBriefing() {
@@ -628,7 +628,7 @@ function buildCharts() {
         });
       }
       clearTimeout(state._labelTimer);
-      state._labelTimer = setTimeout(() => requestAnimationFrame(() => placeLabels(state)), 30);
+      state._labelTimer = setTimeout(() => requestAnimationFrame(() => placeLabels(state)), 16);
     });
 
     chart.subscribeCrosshairMove(param => {
