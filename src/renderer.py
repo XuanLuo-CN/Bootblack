@@ -465,17 +465,21 @@ function getDisplayData(rawArr, filter) {
 function refreshChartData(state) {
   const rawKey = mode + '_raw';
   let maxLen = 1;
+  const allDates = new Set();
   state.seriesArr.forEach(({ ser, meta }) => {
     const disp = getDisplayData(meta[rawKey], rangeFilter);
     ser.setData(disp);
     meta._disp = disp;
     maxLen = Math.max(maxLen, disp.length);
+    disp.forEach(r => allDates.add(r.time));
   });
   state.maxDataLen = maxLen;
-  const maxIdx = Math.max(maxLen - 1, 0);
+  // Use union of all series dates — mixed markets have different trading calendars,
+  // so the combined time axis can have more slots than any single series.
+  state.actualMaxIdx = Math.max(allDates.size - 1, 0);
+  const maxIdx = state.actualMaxIdx;
   state.chart.timeScale().fitContent();
   requestAnimationFrame(() => {
-    // Shift range so last bar is flush with the right edge (no empty space)
     const range = state.chart.timeScale().getVisibleLogicalRange();
     if (range && range.to > maxIdx) {
       const span = range.to - range.from;
@@ -556,7 +560,7 @@ function buildCharts() {
     sec.appendChild(wrap);
     root.appendChild(sec);
 
-    const state = { maxDataLen: 0 };
+    const state = { maxDataLen: 0, actualMaxIdx: undefined };
 
     const chart = LightweightCharts.createChart(chartEl, {
       autoSize: true,
@@ -619,7 +623,7 @@ function buildCharts() {
     // Clamp visible range to current data bounds (respects rangeFilter)
     chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
       if (!range) return;
-      const maxIdx = Math.max(state.maxDataLen, 1) - 1;
+      const maxIdx = state.actualMaxIdx !== undefined ? state.actualMaxIdx : Math.max(state.maxDataLen, 1) - 1;
       const clampedFrom = Math.max(0, range.from);
       const clampedTo   = Math.min(maxIdx, range.to);
       if (clampedFrom !== range.from || clampedTo !== range.to) {
@@ -708,12 +712,20 @@ function placeLabels(state) {
   seriesArr.forEach(({ ser, meta }) => {
     const data = meta._disp || meta[mode];
     if (!data || !data.length) return;
-    const lastPt = data[data.length - 1];
-    const y = ser.priceToCoordinate(lastPt.value);
+    // Find the rightmost data point currently visible on screen
+    let pt = null, connX = chartW;
+    for (let i = data.length - 1; i >= 0; i--) {
+      const rawX = chart.timeScale().timeToCoordinate(data[i].time);
+      if (rawX !== null && priceScaleW + rawX <= chartW + 0.5) {
+        pt = data[i];
+        connX = Math.min(priceScaleW + rawX, chartW);
+        break;
+      }
+    }
+    if (!pt) return;
+    const y = ser.priceToCoordinate(pt.value);
     if (y === null) return;
-    const rawX = chart.timeScale().timeToCoordinate(lastPt.time);
-    const connX = rawX !== null ? Math.min(priceScaleW + rawX, chartW) : chartW;
-    positions.push({ actualY: y, y, pct: lastPt.value, code: meta.code, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market, connX });
+    positions.push({ actualY: y, y, pct: pt.value, code: meta.code, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market, connX });
   });
 
   // Sort by P&L descending: highest gainer at top (smallest y on screen)
