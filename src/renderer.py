@@ -747,8 +747,8 @@ function placeLabels(state) {
     // Connector in the label zone: from chart right edge at actual price Y → label Y
     ctx.save();
     ctx.strokeStyle = p.color;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 3]);
+    ctx.lineWidth = 0.75;
+    ctx.setLineDash([2, 2]);
     ctx.beginPath();
     ctx.moveTo(p.connX, p.actualY);
     ctx.lineTo(chartW + 6, p.y);
