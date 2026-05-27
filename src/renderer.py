@@ -677,7 +677,7 @@ function buildCharts() {
 // ── End-of-series labels ────────────────────────────────────────────────────
 
 function placeLabels(state) {
-  const { seriesArr, labelLayer, overlayCanvas, chartEl } = state;
+  const { seriesArr, labelLayer, overlayCanvas, chartEl, chart } = state;
 
   labelLayer.innerHTML = '';
 
@@ -703,7 +703,9 @@ function placeLabels(state) {
     const lastPt = data[data.length - 1];
     const y = ser.priceToCoordinate(lastPt.value);
     if (y === null) return;
-    positions.push({ actualY: y, y, pct: lastPt.value, code: meta.code, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market });
+    const rawX = chart.timeScale().timeToCoordinate(lastPt.time);
+    const connX = (rawX !== null) ? Math.min(Math.round(rawX), chartW) : chartW;
+    positions.push({ actualY: y, y, pct: lastPt.value, code: meta.code, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market, connX });
   });
 
   // Sort by P&L descending: highest gainer at top (smallest y on screen)
@@ -727,8 +729,8 @@ function placeLabels(state) {
     ctx.strokeStyle = p.color;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(chartW, p.actualY);
-    ctx.lineTo(chartW + 6, p.y);
+    ctx.moveTo(p.connX, p.actualY);
+    ctx.lineTo(p.connX + 6, p.y);
     ctx.stroke();
     ctx.restore();
 
