@@ -695,9 +695,11 @@ function placeLabels(state) {
   const OW = wrap ? wrap.clientWidth : 0;
   const OH = wrap ? wrap.clientHeight : 0;
   if (!OW || !OH) return;
-  overlayCanvas.width = OW;
-  overlayCanvas.height = OH;
+  const dpr = window.devicePixelRatio || 1;
+  overlayCanvas.width = OW * dpr;
+  overlayCanvas.height = OH * dpr;
   const ctx = overlayCanvas.getContext('2d');
+  ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, OW, OH);
 
   const chartW = chartEl.clientWidth;   // right boundary of TradingView canvas

@@ -119,7 +119,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 <div id="header">
   <h1>BOOTBLACK</h1>
   <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px;">
-    <span class="ts">2026-05-26 21:47</span>
+    <span class="ts">2026-05-26 21:48</span>
     <button class="tbtn" onclick="buildCharts();buildRanking()">Refresh</button>
   </div>
 </div>
@@ -442,9 +442,11 @@ function placeLabels(state) {
   const OW = wrap ? wrap.clientWidth : 0;
   const OH = wrap ? wrap.clientHeight : 0;
   if (!OW || !OH) return;
-  overlayCanvas.width = OW;
-  overlayCanvas.height = OH;
+  const dpr = window.devicePixelRatio || 1;
+  overlayCanvas.width = OW * dpr;
+  overlayCanvas.height = OH * dpr;
   const ctx = overlayCanvas.getContext('2d');
+  ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, OW, OH);
 
   const chartW = chartEl.clientWidth;   // right boundary of TradingView canvas
