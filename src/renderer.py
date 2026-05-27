@@ -682,7 +682,7 @@ function buildCharts() {
 // ── End-of-series labels ────────────────────────────────────────────────────
 
 function placeLabels(state) {
-  const { seriesArr, labelLayer, overlayCanvas, chartEl } = state;
+  const { seriesArr, labelLayer, overlayCanvas, chartEl, chart } = state;
 
   labelLayer.innerHTML = '';
 
@@ -699,6 +699,9 @@ function placeLabels(state) {
   const chartW = chartEl.clientWidth;   // right boundary of TradingView canvas
   const H = chartEl.clientHeight;
   if (!chartW || !H) return;
+  // timeToCoordinate uses time-axis space (origin = right after left price scale)
+  // add price scale width to convert to canvas space
+  const priceScaleW = chart.priceScale('left').width();
 
   const positions = [];
 
@@ -708,7 +711,9 @@ function placeLabels(state) {
     const lastPt = data[data.length - 1];
     const y = ser.priceToCoordinate(lastPt.value);
     if (y === null) return;
-    positions.push({ actualY: y, y, pct: lastPt.value, code: meta.code, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market });
+    const rawX = chart.timeScale().timeToCoordinate(lastPt.time);
+    const connX = rawX !== null ? Math.min(priceScaleW + rawX, chartW) : chartW;
+    positions.push({ actualY: y, y, pct: lastPt.value, code: meta.code, color: meta.color, name: meta.name, desc: meta.desc, market: meta.market, connX });
   });
 
   // Sort by P&L descending: highest gainer at top (smallest y on screen)
@@ -732,7 +737,7 @@ function placeLabels(state) {
     ctx.strokeStyle = p.color;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(chartW, p.actualY);
+    ctx.moveTo(p.connX, p.actualY);
     ctx.lineTo(chartW + 6, p.y);
     ctx.stroke();
     ctx.restore();
