@@ -472,9 +472,10 @@ function refreshChartData(state) {
     maxLen = Math.max(maxLen, disp.length);
   });
   state.maxDataLen = maxLen;
-  state.chart.timeScale().fitContent();
+  const maxIdx = Math.max(maxLen - 1, 0);
+  state.chart.timeScale().setVisibleLogicalRange({ from: 0, to: maxIdx });
   setTimeout(() => {
-    state.chart.timeScale().fitContent();
+    state.chart.timeScale().setVisibleLogicalRange({ from: 0, to: maxIdx });
     requestAnimationFrame(() => requestAnimationFrame(() => placeLabels(state)));
   }, 150);
 }
@@ -567,6 +568,7 @@ function buildCharts() {
       timeScale: {
         borderColor: '#2c2c2a',
         timeVisible: true,
+        rightOffset: 0,
         tickMarkFormatter: (time, tickMarkType) => {
           let month, day;
           if (typeof time === 'object') {
