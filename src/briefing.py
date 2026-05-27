@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Xuan Luo
+# SPDX-License-Identifier: MIT
 """
 briefing.py — Bilingual daily market briefing via Claude API.
 

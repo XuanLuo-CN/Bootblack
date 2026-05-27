@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Xuan Luo
+# SPDX-License-Identifier: MIT
 from datetime import datetime
 from pathlib import Path
 

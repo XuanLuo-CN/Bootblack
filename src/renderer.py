@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Xuan Luo
+# SPDX-License-Identifier: MIT
 import json
 import re
 from datetime import date, datetime, timedelta
@@ -247,7 +249,8 @@ def render(groups: list, output_path: Path = OUTPUT_PATH, briefing: dict | None 
 #               __RANKING_LIMIT__  __COLS__  __HEIGHT__  __STOCK_META__
 #               __BRIEFING_CN__  __BRIEFING_EN__  __BRIEFING_HIDDEN__
 # ---------------------------------------------------------------------------
-_TEMPLATE = r"""<!DOCTYPE html>
+_TEMPLATE = r"""<!-- Copyright (c) 2026 Xuan Luo -- MIT License -->
+<!DOCTYPE html>
 <html lang="en" data-bb-height="__HEIGHT__">
 <head>
 <meta charset="UTF-8">
