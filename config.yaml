@@ -6,6 +6,7 @@ obsidian:
 
 data:
   cache_dir: "output/"               # local cache directory
+  history_days: 90                   # calendar days of price history to fetch
 
 schedule:
   a_shares: "15:35"                  # A-share trigger time (weekdays, local time)

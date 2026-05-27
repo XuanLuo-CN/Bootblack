@@ -21,9 +21,11 @@ def _load_yaml(path: Path) -> dict:
 
 
 def _window() -> tuple[str, str]:
-    """Return (start, end) as YYYY-MM-DD strings for the past 90 calendar days."""
+    """Return (start, end) as YYYY-MM-DD strings, window size from config."""
+    cfg = _load_yaml(CONFIG_PATH)
+    days = int(cfg.get("history_days", 90))
     end = date.today()
-    start = end - timedelta(days=90)
+    start = end - timedelta(days=days)
     return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
 
 
@@ -62,7 +64,8 @@ def fetch_a(code: str) -> list[dict]:
 
 def fetch_hk(code: str) -> list[dict]:
     """HK-listed stock OHLCV via yfinance (leading zeros stripped, .HK suffix)."""
-    df = yf.Ticker(f"{code.lstrip('0')}.HK").history(period="3mo").reset_index()
+    start, end = _window()
+    df = yf.Ticker(f"{code.lstrip('0')}.HK").history(start=start, end=end).reset_index()
     df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
     df = df.rename(columns={
         "Date": "date", "Open": "open", "Close": "close",
@@ -72,8 +75,9 @@ def fetch_hk(code: str) -> list[dict]:
 
 
 def fetch_us(code: str) -> list[dict]:
-    """US-listed stock OHLCV via yfinance for the past month."""
-    df = yf.Ticker(code).history(period="3mo").reset_index()
+    """US-listed stock OHLCV via yfinance."""
+    start, end = _window()
+    df = yf.Ticker(code).history(start=start, end=end).reset_index()
     df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
     df = df.rename(columns={
         "Date": "date", "Open": "open", "Close": "close",
