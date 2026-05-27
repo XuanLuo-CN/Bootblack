@@ -101,6 +101,7 @@ def render(groups: list, output_path: Path = OUTPUT_PATH, briefing: dict | None 
     ranking_limit = int(cfg.get("ranking_limit", 10))
     charts_per_row = int(cfg.get("charts_per_row", 2))
     group_max_stocks = int(cfg.get("group_max_stocks", 8))
+    max_width = int(cfg.get("max_width", 1000))
 
     # 7-day ranking (use up to 8 data points back to approximate ~7 trading days)
     rankings: list[dict] = []
@@ -231,6 +232,7 @@ def render(groups: list, output_path: Path = OUTPUT_PATH, briefing: dict | None 
     html = html.replace("__UPDATED__", now)
     html = html.replace("__RANKING_LIMIT__", str(ranking_limit))
     html = html.replace("__COLS__", str(charts_per_row))
+    html = html.replace("__MAX_WIDTH__", str(max_width))
     html = html.replace("__HEIGHT__", str(page_height))
     html = html.replace("__STOCK_META__", json.dumps(stock_meta, ensure_ascii=False))
     html = html.replace("__BRIEFING_CN_HTML__", briefing_cn_html)
@@ -259,7 +261,7 @@ _TEMPLATE = r"""<!-- Copyright (c) 2026 Xuan Luo -- MIT License -->
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; transition: none; max-width: 1440px; margin: 0 auto; }
+body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; transition: none; max-width: __MAX_WIDTH__px; margin: 0 auto; }
 
 #header { padding: 22px 32px 16px; border-bottom: 1px solid #2c2c2a; display: flex; align-items: baseline; gap: 18px; }
 #header h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.16em; color: #e0e0e0; }

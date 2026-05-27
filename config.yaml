@@ -18,8 +18,9 @@ git:
 ranking_limit: 10                    # max stocks shown per side in the ranking bars
 charts_per_row: 1                    # number of chart columns per row
 group_max_stocks: 8                  # max stocks per chart; groups larger than this are split automatically
+max_width: 1000                      # max page width in pixels
 
 briefing:
-  # api_key is stored in .secrets.yaml (gitignored) — do not add it here
+  # api_key is stored in .secrets.yaml (gitignored) 
   model: "claude-haiku-4-5-20251001" # override with claude-sonnet-4-6 for better quality
   credit: 5.00                       # initial credit loaded in USD; used to estimate days remaining
