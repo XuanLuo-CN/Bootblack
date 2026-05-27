@@ -119,7 +119,7 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 <div id="header">
   <h1>BOOTBLACK</h1>
   <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px;">
-    <span class="ts">2026-05-26 20:21</span>
+    <span class="ts">2026-05-26 20:23</span>
     <button class="tbtn" onclick="buildCharts();buildRanking()">Refresh</button>
   </div>
 </div>
@@ -477,7 +477,7 @@ function placeLabels(state) {
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(p.connX, p.actualY);
-    ctx.lineTo(p.connX + 6, p.y);
+    ctx.lineTo(chartW + 6, p.y);
     ctx.stroke();
     ctx.restore();
 
