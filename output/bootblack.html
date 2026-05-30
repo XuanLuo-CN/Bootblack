@@ -119,8 +119,8 @@ body { background: transparent; color: #e0e0e0; font-family: system-ui, -apple-s
 <div id="header">
   <h1>BOOTBLACK</h1>
   <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px;">
-    <span class="ts">2026-05-30 13:47</span>
-    <button class="tbtn" onclick="window.location.href=window.location.pathname+'?t='+Date.now()">Refresh</button>
+    <span class="ts" id="ts-header" title="Data: 2026-05-30 14:10"></span>
+    <button class="tbtn" onclick="location.href=location.href.split('?')[0]+'?t='+Date.now()">Refresh</button>
   </div>
 </div>
 
@@ -264,6 +264,11 @@ function setBriefingLang(lang) {
 }
 
 function init() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('ts-header').textContent =
+    d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) +
+    ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   buildCharts();
   buildRanking();
   initBriefing();
